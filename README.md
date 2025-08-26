@@ -73,6 +73,7 @@ app.run(host="0.0.0.0", port=5000, debug=True)
 ---
 
 ## Directory Structure (for CISC 4900)
+```
 NetHealth2025
 ├── api
 │   ├── __init__.py
@@ -88,6 +89,7 @@ NetHealth2025
 ├── templates
 │   └── index.html          # Frontend HTML
 └── tests                   # Placeholder for unit tests
+```
 
 ---
 ## Screenshots
