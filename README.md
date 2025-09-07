@@ -103,7 +103,7 @@ NetHealth2025
 - Expand device identification beyond ARP
 
 ## Supervisor
-Professor R. Zwick – Brooklyn College  
+Mr. R. Warno – Mount Sinai  
 
 ## Student
 Rigel Leonard  
