@@ -1,7 +1,7 @@
 # NetHealth 2025
 
 NetHealth 2025 is a lightweight system and environment dashboard built with **Flask**, **HTML/CSS**, and **JavaScript**.  
-It’s designed as a sandbox project to demonstrate real-time updates of system health, local conditions, inspirational content, and price tracking — all in a single responsive web dashboard.
+It’s designed as a sandbox project to demonstrate real-time updates of system health, local conditions, inspirational content, and price tracking. All in a single responsive web dashboard.
 
 ---
 
@@ -32,32 +32,32 @@ It’s designed as a sandbox project to demonstrate real-time updates of system 
 ---
 
 ## Project Structure
-
+'''
 NetHealth2025/
 ├── app.py                 # Flask entrypoint
 ├── requirements.txt       # Python dependencies
 ├── README.md              # Project documentation
-
+'''
 API layer
-
+'''
 ├── api/
 │   ├── init.py
 │   └── routes.py          # Defines all API endpoints
-
+'''
 Data files
-
+'''
 ├── data/
 │   ├── prices.csv         # CSV input for price ticker
 │   └── quotes.json        # JSON input for inspirational quotes
-
+'''
 Reusable system service
-
+'''
 ├── services/
 │   ├── init.py
 │   └── system_info.py     # Collects CPU/memory/storage/network info
-
+'''
 Static assets
-
+'''
 ├── static/
 │   ├── css/
 │   │   ├── main.css       # Base styles
@@ -66,20 +66,20 @@ Static assets
 │   │   ├── dashboard.js   # Client-side dashboard logic
 │   │   └── themes.js      # Theme/font handling logic
 │   └── img/               # Placeholder for images/icons
-
+'''
 Templates (Jinja2)
-
+'''
 ├── templates/
 │   └── index.html         # Dashboard HTML page
-
+'''
 Development + tests
-
+'''
 ├── scripts/
 │   └── dev_run.sh         # Helper script for local dev run
 └── tests/
 ├── conftest.py        # Pytest configuration
 └── test_system_info.py # Unit test for system_info service
-
+'''
 ---
 
 ## Setup & Installation
