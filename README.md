@@ -142,7 +142,23 @@ Additional Themes:
 ![Terminal](static/img/terminal_theme_light.png)
 
 ⸻
-Contact
-	•	Personal: rigel.leonard@gmail.com
-	•	School: rigel.leonard31@bcmail.cuny.edu
+## Future Work
+- Add dark/light mode toggle
+- Host via domain (nethealth2025.com) with local client integration
+- Expand device identification beyond ARP
 
+## Supervisor
+Mr. R. Warno – Mount Sinai  
+
+## Student
+Rigel Leonard  
+Fall 2025 – CISC 4900  
+Email: rigel.leonard31@bcmail.cuny.edu | rigel.leonard@gmail.com
+
+## License
+This project is licensed under the MIT License – see the LICENSE file for details.
+
+## Badges
+![Python](https://img.shields.io/badge/python-3.10+-blue.svg)
+![Flask](https://img.shields.io/badge/flask-3.0-lightgrey.svg)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
