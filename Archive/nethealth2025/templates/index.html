@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>NetHealth 2025</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link href="/static/main.css" rel="stylesheet">
+</head>
+<body>
+  <header class="header">
+    <div id="date"></div>
+    <h1>NetHealth 2025</h1>
+    <div id="time"></div>
+  </header>
+  <main class="container">
+    <section class="row">
+      <div id="temp-box" class="card">Loading temperature…</div>
+    </section>
+    <section class="grid">
+      <div class="card">
+        <h2>System Metrics</h2>
+        <p><strong>CPU:</strong> <span id="cpu">—</span></p>
+        <p><strong>Memory:</strong> <span id="mem">—</span></p>
+        <p><strong>Disk:</strong> <span id="disk">—</span></p>
+        <p><strong>Uptime:</strong> <span id="uptime">—</span></p>
+        <p><strong>Network:</strong> <span id="net">—</span></p>
+      </div>
+      <div class="card">
+        <h2>LAN Devices</h2>
+        <div id="devices">Loading…</div>
+      </div>
+    </section>
+  </main>
+<script>
+function tickClock() {
+  const now = new Date();
+  document.getElementById("date").textContent = now.toLocaleDateString();
+  document.getElementById("time").textContent = now.toLocaleTimeString();
+}
+setInterval(tickClock, 1000); tickClock();
+
+async function refreshStatus() {
+  const r = await fetch("/api/status");
+  const d = await r.json();
+  document.getElementById("temp-box").textContent =
+    `${d.temperature.celsius}°C / ${d.temperature.fahrenheit}°F`;
+  document.getElementById("cpu").textContent = d.cpu_usage;
+  document.getElementById("mem").textContent =
+    `${d.memory_usage.used_mb}MB / ${d.memory_usage.total_mb}MB (${d.memory_usage.percent})`;
+  document.getElementById("disk").textContent =
+    `${d.disk_usage.used} / ${d.disk_usage.total} (${d.disk_usage.percent})`;
+  document.getElementById("uptime").textContent = d.uptime;
+  document.getElementById("net").textContent =
+    `Sent: ${d.network_usage.sent_mb} MB, Recv: ${d.network_usage.recv_mb} MB`;
+}
+async function refreshDevices() {
+  const r = await fetch("/api/devices");
+  const d = await r.json();
+  const div = document.getElementById("devices");
+  if (!d.devices.length) { div.textContent = "No devices found."; return; }
+  div.innerHTML = d.devices.map(v => `<div>${v.ip} (${v.mac})</div>`).join("");
+}
+setInterval(refreshStatus, 5000);
+setInterval(refreshDevices, 10000);
+refreshStatus(); refreshDevices();
+</script>
+</body>
+</html>

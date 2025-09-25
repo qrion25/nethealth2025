@@ -1,5 +1,6 @@
 from flask import Flask, render_template
 from api.routes import api_bp
+import os
 
 def create_app():
     app = Flask(__name__)
@@ -13,4 +14,6 @@ def create_app():
 
 if __name__ == "__main__":
     app = create_app()
-    app.run(host="0.0.0.0", port=5050, debug=True)
+    # Default to port 5001 if PORT env var is not set
+    port = int(os.environ.get("PORT", 5001))
+    app.run(host="0.0.0.0", port=port, debug=True)

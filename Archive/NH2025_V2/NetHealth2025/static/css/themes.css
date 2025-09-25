@@ -1,0 +1,135 @@
+/* static/css/themes.css */
+
+/* Base tokens (fallbacks) */
+:root {
+  --bg: #f7f7f8;
+  --fg: #1a1a1a;
+  --card-bg: rgba(255,255,255,0.85);
+  --card-border: rgba(0,0,0,0.08);
+  --accent: #3B82F6;    /* primary */
+  --accent-2: #10B981;  /* secondary */
+  --warn: #F59E0B;
+  --danger: #EF4444;
+  --muted: #6b7280;
+
+  --radius-card: 16px;
+  --radius-chip: 12px;
+
+  /* font tokens (overridden by theme.js on selection) */
+  --font-base: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  --font-display: "Playfair Display", Georgia, serif;
+}
+
+/* Dark mode shell (still themeable) */
+body.theme-dark {
+  --bg: #111315;
+  --fg: #f2f4f8;
+  --card-bg: rgba(255,255,255,0.06);
+  --card-border: rgba(255,255,255,0.12);
+  --muted: #c7c9d1;
+}
+
+/* ========== Named Themes ========== */
+
+/* NetHealth (default) */
+body[data-theme="nethealth"] {
+  --accent: #3B82F6;
+  --accent-2: #10B981;
+}
+
+/* Sunset */
+body[data-theme="sunset"] {
+  --accent: #FA812F;
+  --accent-2: #FFC107;
+}
+
+/* Forest */
+body[data-theme="forest"] {
+  --accent: #228B22;
+  --accent-2: #2DD4BF;
+}
+
+/* Terminal */
+body[data-theme="terminal"] {
+  --bg: #0b0f11;
+  --fg: #e5fff4;
+  --card-bg: rgba(0,0,0,0.55);
+  --card-border: rgba(255,255,255,0.12);
+  --accent: #00ff88;
+  --accent-2: #39c5bb;
+  /* IMPORTANT: muted must also be light on dark backgrounds */
+  --muted: #a7c7bf; /* soft desaturated mint for secondary text */
+}
+
+/* Make chips readable even if user hasn't toggled dark mode */
+body[data-theme="terminal"] .theme-chip,
+body[data-theme="terminal"] .font-chip {
+  background: rgba(255,255,255,0.08);
+  border-color: var(--card-border);
+  color: var(--fg);
+}
+
+/* Ensure the font sample text uses the theme foreground */
+.font-chip .font-sample {
+  color: inherit;
+}
+
+/* Subtle text should follow the theme muted color (works for Terminal now) */
+.subtle {
+  color: var(--muted);
+}
+
+/* Theme toggle icon fixes */
+.theme-toggle i {
+  color: currentColor; /* ensures icon inherits text color */
+}
+body.theme-dark .theme-toggle {
+  color: var(--fg);    /* ensures button + icon are visible in dark mode */
+}
+
+/* Optional split-flap vibe for cards (rounded = 24 like your Figma) */
+.card {
+  border-radius: var(--radius-card, 16px);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  color: var(--fg);
+}
+
+/* Utility chips */
+.theme-chip,
+.font-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .5rem .75rem;
+  border-radius: var(--radius-chip);
+  border: 1px solid var(--card-border);
+  background: rgba(0,0,0,0.03);
+  cursor: pointer;
+  user-select: none;
+  color: var(--fg); /* NEW: inherit theme text color */
+}
+body.theme-dark .theme-chip,
+body.theme-dark .font-chip {
+  background: rgba(255,255,255,0.08);
+  border-color: var(--card-border);
+  color: var(--fg); /* ensure light text in dark mode */
+}
+.theme-chip.is-active,
+.font-chip.is-active {
+  outline: 2px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+/* Font chip inner text follows theme */
+.font-chip .font-sample {
+  color: inherit;  /* NEW: sample inherits fg */
+}
+.font-chip .font-name {
+  color: var(--muted);
+}
+
+/* Progress fills inherit palette */
+.fill.good    { background: var(--accent-2); }
+.fill.warning { background: var(--warn); }
+.fill.danger  { background: var(--danger); }

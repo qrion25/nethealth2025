@@ -1,145 +1,235 @@
-import psutil
+# services/system_info.py
+from __future__ import annotations
+
+import os
 import platform
-import subprocess
-import re
+import shutil
+import socket
 import time
-from datetime import timedelta
-from pathlib import Path
+from typing import Any, Dict, Optional
 
-def _read_pi_temp_vcgencmd():
-    """Raspberry Pi firmware tool."""
+try:
+    import psutil  # type: ignore
+except Exception:  # pragma: no cover
+    psutil = None
+
+# ---------- Helpers (updated) ----------
+
+from typing import Optional, Any, Dict
+import socket
+import shutil
+import time
+import platform
+
+def _detect_online(timeout: float = 0.5) -> bool:
+    """Quick online check by opening a TCP socket to a well-known host."""
     try:
-        out = subprocess.check_output(["vcgencmd", "measure_temp"]).decode().strip()
-        m = re.search(r"temp=([0-9.]+)", out)
-        if m:
-            c = float(m.group(1))
-            f = c * 9/5 + 32
-            return c, f
+        sock = socket.create_connection(("1.1.1.1", 53), timeout=timeout)
+        sock.close()
+        return True
+    except OSError:
+        return False
+
+
+def _measure_rtt(host: str = "1.1.1.1", port: int = 443, tries: int = 2, timeout: float = 0.6) -> Optional[float]:
+    """Best-effort TCP connect RTT in milliseconds (avg of 'tries')."""
+    samples = []
+    for _ in range(max(1, tries)):
+        try:
+            start = time.perf_counter()
+            sock = socket.create_connection((host, port), timeout=timeout)
+            sock.close()
+            end = time.perf_counter()
+            samples.append((end - start) * 1000.0)
+        except OSError:
+            pass
+    if not samples:
+        return None
+    return sum(samples) / len(samples)
+
+
+def _boot_time_epoch() -> Optional[int]:
+    try:
+        if psutil and hasattr(psutil, "boot_time"):
+            return int(psutil.boot_time())
     except Exception:
         pass
-    return None, None
+    return None
 
-def _read_linux_sysfs_temp():
-    """
-    Generic Linux fallback: /sys/class/thermal/thermal_zone*/temp
-    Values are usually millidegrees C.
-    """
+
+def _uptime_seconds() -> Optional[int]:
+    bt = _boot_time_epoch()
+    if bt is None:
+        return None
+    return int(time.time() - bt)
+
+
+def _memory_info() -> Dict[str, Optional[float]]:
+    """Returns used/total/percent in MB and % (psutil if available)."""
+    if psutil:
+        try:
+            vm = psutil.virtual_memory()
+            total_mb = vm.total / (1024 * 1024)
+            # “used” ~ total - available feels closer to user-visible memory pressure
+            used_mb = (vm.total - vm.available) / (1024 * 1024)
+            percent = float(vm.percent)
+            return {
+                "used_mb": round(used_mb, 2),
+                "total_mb": round(total_mb, 2),
+                "percent": round(percent, 1),
+            }
+        except Exception:
+            pass
+    return {"used_mb": None, "total_mb": None, "percent": None}
+
+
+def _storage_info() -> Dict[str, Optional[float]]:
+    """Disk usage for root filesystem. Keeps your original keys."""
     try:
-        zones = sorted(Path("/sys/class/thermal").glob("thermal_zone*/temp"))
-        for z in zones:
-            try:
-                raw = z.read_text().strip()
-                if not raw:
-                    continue
-                val = float(raw)
-                # Heuristic: if value looks like 47000 it's m°C; if 47.0 it's °C
-                c = val / 1000.0 if val > 500 else val
-                f = c * 9/5 + 32
-                return c, f
-            except Exception:
-                continue
+        total, used, free = shutil.disk_usage("/")
+        total_gb = total / (1024 ** 3)
+        used_gb = used / (1024 ** 3)
+        free_gb = free / (1024 ** 3)
+        percent = (used / total) * 100 if total > 0 else None
+        return {
+            "total_gb": round(total_gb, 2),
+            "quota_gb": round(total_gb, 2),  # alias to satisfy existing shape
+            "used_gb": round(used_gb, 2),
+            "free_gb": round(free_gb, 2),
+            "percent": round(percent, 1) if percent is not None else None,
+        }
+    except Exception:
+        return {"total_gb": None, "quota_gb": None, "used_gb": None, "free_gb": None, "percent": None}
+
+
+def _list_up_non_loopback_ifaces() -> list[str]:
+    """
+    Return interface names that are up and not loopback, preferring those
+    that have at least one IPv4 address (real connectivity signal).
+    """
+    names: list[str] = []
+    if not psutil:
+        return names
+    try:
+        stats = psutil.net_if_stats() or {}
+        addrs = psutil.net_if_addrs() or {}
+
+        # up & not loopback
+        candidates = [n for n, st in stats.items() if getattr(st, "isup", False) and not n.lower().startswith(("lo", "loopback"))]
+
+        # prefer those with IPv4
+        ipv4_first, ipv4_later = [], []
+        for n in candidates:
+            has_ipv4 = any(getattr(a, "family", None) == socket.AF_INET for a in addrs.get(n, []))
+            (ipv4_first if has_ipv4 else ipv4_later).append(n)
+
+        names = ipv4_first + ipv4_later
     except Exception:
         pass
-    return None, None
+    return names
 
-def _read_generic_psutil_temp():
-    """Works on some Linux distros / hardware; generally N/A on macOS/Windows."""
+
+def _active_interface_name() -> Optional[str]:
+    """Best-effort guess of an active interface name (cross-platform)."""
+    # 1) Prefer up, non-loopback, with IPv4
+    candidates = _list_up_non_loopback_ifaces()
+    if candidates:
+        return candidates[0]
+
+    # 2) Fallback: anything up (even if no IPv4)
+    if psutil:
+        try:
+            for n, st in (psutil.net_if_stats() or {}).items():
+                if getattr(st, "isup", False):
+                    return n
+        except Exception:
+            pass
+
+    # 3) Nothing found
+    return None
+
+
+def _friendly_interface_label(name: Optional[str]) -> Optional[str]:
+    """Map raw interface names to friendly labels (macOS/Windows/Linux best-effort)."""
+    if not name:
+        return None
+    n = name.lower()
+
+    # Loopback / virtual
+    if n.startswith(("lo", "loopback")):
+        return "Loopback"
+    if n.startswith(("utun", "tap", "tun", "vmnet", "br", "vbox", "docker", "podman", "wg")) or "bridge" in n:
+        return "Virtual/Bridge"
+
+    # Windows common strings
+    if "wi-fi" in n or "wifi" in n or "wlan" in n:
+        return "Wi-Fi"
+    if "ethernet" in n or "lan" in n:
+        return "Ethernet"
+    if "bluetooth" in n:
+        return "Bluetooth PAN"
+
+    # macOS common names
+    if n.startswith("en"):
+        # en0 often Wi-Fi on laptops; other en* can be Ethernet/Thunderbolt
+        return "Wi-Fi" if n == "en0" else "Ethernet"
+    if n.startswith("anpi"):  # Apple Network Private Interface family
+        return "Wi-Fi"
+    if n.startswith("awdl"):  # Apple Wireless Direct Link
+        return "Wi-Fi (AWDL)"
+
+    # Linux predictable names
+    if n.startswith(("wlan", "wlp", "wlx")):
+        return "Wi-Fi"
+    if n.startswith(("eth", "enp", "ens", "eno")):
+        return "Ethernet"
+
+    # Fallback to raw name
+    return name
+
+
+def _network_info() -> Dict[str, Optional[Any]]:
+    """Shape compatible with your frontend."""
+    iface_raw = _active_interface_name()
+    return {
+        "online": _detect_online(),
+        "effective_type": None,     # browser concept; kept for consistency
+        "downlink_mbps": None,      # populate later if you add a throughput test
+        "rtt_ms": _measure_rtt(),   # quick TCP RTT estimate
+        "interface": iface_raw,
+        "interface_friendly": _friendly_interface_label(iface_raw),
+    }
+
+
+# ---------- Public ----------
+
+def get_system_info() -> Dict[str, Any]:
+    uname = platform.uname()
+    cpu_name = uname.processor or platform.machine() or ""
     try:
-        temps = psutil.sensors_temperatures()
-        if not temps:
-            return None, None
-        # pick the first sensor with a current value
-        for entries in temps.values():
-            for e in entries:
-                if hasattr(e, "current") and e.current is not None:
-                    c = float(e.current)
-                    f = c * 9/5 + 32
-                    return c, f
+        cores_physical = psutil.cpu_count(logical=False) if psutil else None
     except Exception:
-        pass
-    return None, None
+        cores_physical = None
 
-def get_temperature():
-    """
-    Order of attempts:
-    - Raspberry Pi vcgencmd
-    - Linux sysfs thermal zone
-    - psutil sensors
-    - else N/A
-    """
-    c = f = None
-    sys = platform.system().lower()
+    return {
+        # meta
+        "timestamp": int(time.time()),
+        "platform": uname.system,
+        "platform_release": uname.release,
+        "machine": uname.machine,
+        "architecture": (platform.architecture()[0] or "").strip(),
+        "cpu": cpu_name.lower(),
+        "cpu_cores": int(cores_physical) if cores_physical is not None else int(os.cpu_count() or 1),
 
-    # Try Pi first (works only on Pi OS)
-    c, f = _read_pi_temp_vcgencmd()
+        # legacy field kept (you also have uptime_seconds below)
+        "boot_time": _boot_time_epoch(),
 
-    # Linux fallback (works on Pi and many Linux PCs)
-    if c is None and sys == "linux":
-        c, f = _read_linux_sysfs_temp()
+        # primary sections used by UI/tests
+        "battery": {"level": None, "charging": None},  # unknown server-side
+        "memory": _memory_info(),
+        "storage": _storage_info(),
+        "network": _network_info(),
 
-    # Generic psutil fallback
-    if c is None:
-        c, f = _read_generic_psutil_temp()
-
-    if c is None:
-        return {"celsius": "N/A", "fahrenheit": "N/A",
-                "status": {"color": "gray", "message": "Unknown Temperature"}}
-
-    # Thresholds (tune as you like)
-    if c < 57:
-        status = {"color": "green", "message": "Good Temperature."}
-    elif c <= 59:
-        status = {"color": "orange", "message": "Moderate Temperature."}
-    else:
-        status = {"color": "red", "message": "High Temperature."}
-
-    return {"celsius": round(c, 1), "fahrenheit": round(f, 1), "status": status}
-
-def get_cpu_percent():
-    return psutil.cpu_percent(interval=0.2)
-
-def get_memory_usage():
-    vm = psutil.virtual_memory()
-    return {"used_mb": round(vm.used/1024/1024, 2),
-            "total_mb": round(vm.total/1024/1024, 2),
-            "percent": f"{vm.percent}%"}
-
-def get_disk_usage():
-    d = psutil.disk_usage("/")
-    return {"total": f"{d.total/1024/1024/1024:.2f} GB",
-            "used": f"{d.used/1024/1024/1024:.2f} GB",
-            "free": f"{d.free/1024/1024/1024:.2f} GB",
-            "percent": f"{d.percent}%"}
-
-def get_uptime_str():
-    try:
-        uptime_seconds = time.time() - psutil.boot_time()
-        return str(timedelta(seconds=int(uptime_seconds)))
-    except Exception:
-        return "N/A"
-
-def get_network_counters():
-    try:
-        n = psutil.net_io_counters()
-        return {"sent_mb": round(n.bytes_sent/1024/1024,2),
-                "recv_mb": round(n.bytes_recv/1024/1024,2)}
-    except Exception:
-        return {"sent_mb": "N/A", "recv_mb": "N/A"}
-
-def _arp_scan_lines():
-    try:
-        out = subprocess.check_output(["arp", "-a"]).decode()
-        return out.splitlines()
-    except Exception:
-        return []
-
-def get_network_devices_safe(mask=True):
-    devices = []
-    for line in _arp_scan_lines():
-        m = re.search(r"\(([\d\.]+)\)\s+at\s+([\w:<>-]+)", line)
-        if m:
-            ip, mac = m.groups()
-            mac_clean = mac.lower()
-            mac_display = mac_clean[:8] + ":**:**:**" if (mask and mac_clean not in ("<incomplete>",)) else mac_clean
-            devices.append({"ip": ip, "mac": mac_display, "device_type": "Unknown"})
-    return devices
+        # convenient extra
+        "uptime_seconds": _uptime_seconds(),
+    }
