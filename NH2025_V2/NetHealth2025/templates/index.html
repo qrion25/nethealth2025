@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NetHealth 2025</title>
+
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@300;400;600;700&display=swap" />
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
+  <!-- App CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}" />
+</head>
+<body class="theme-light">
+  <header class="site-header">
+    <div class="header-container">
+      <h1 class="brand">NetHealth <span class="accent">2025</span></h1>
+      <div class="header-actions">
+        <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
+          <i class="fas fa-moon" aria-hidden="true"></i><span>Dark</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Greeting -->
+    <section class="card">
+      <h2 class="card-title"><i class="fas fa-hand card-icon" aria-hidden="true"></i> Welcome</h2>
+      <p class="greeting">Hello, <span class="accent">Visitor</span></p>
+      <p class="subtle">Pick a theme, skim some stats, and keep an eye on prices.</p>
+    </section>
+
+    <!-- Local Conditions -->
+    <section class="card">
+      <h2 class="card-title"><i class="fas fa-cloud-sun card-icon" aria-hidden="true"></i> Local Conditions</h2>
+      <div class="grid-2" id="weatherBlock">
+        <div class="center">
+          <div class="big" id="tempValue">--°</div>
+          <div class="label">Temperature</div>
+        </div>
+        <div class="center">
+          <div class="big" id="timeValue">--:--</div>
+          <div class="label">Local Time</div>
+        </div>
+        <!-- optional extras populated by /api/weather when available -->
+        <div class="center">
+          <div class="big" id="locationValue">—</div>
+          <div class="label">Location</div>
+        </div>
+        <div class="center">
+          <div class="big" id="conditionValue">—</div>
+          <div class="label">Conditions</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- System Status (client best-effort) -->
+    <section class="card">
+      <h2 class="card-title"><i class="fas fa-microchip card-icon" aria-hidden="true"></i> System Status</h2>
+      <div class="stack">
+        <div class="status-row">
+          <div class="status-label"><i class="fas fa-battery-three-quarters" aria-hidden="true"></i> Battery</div>
+          <div class="status-value">
+            <div class="bar"><div class="fill good" id="batteryBar" style="width:0%"></div></div>
+            <span id="batteryText">N/A</span>
+          </div>
+        </div>
+        <div class="status-row">
+          <div class="status-label"><i class="fas fa-memory" aria-hidden="true"></i> Memory</div>
+          <div class="status-value">
+            <div class="bar"><div class="fill warning" id="memoryBar" style="width:0%"></div></div>
+            <span id="memoryText">N/A</span>
+          </div>
+        </div>
+        <div class="status-row">
+          <div class="status-label"><i class="fas fa-wifi" aria-hidden="true"></i> Network</div>
+          <div class="status-value">
+            <div class="bar"><div class="fill good" id="networkBar" style="width:0%"></div></div>
+            <span id="networkText">Unknown</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Typography (Theme / Font picker) -->
+    <section class="card">
+      <h2 class="card-title"><i class="fa-solid fa-text-width card-icon" aria-hidden="true"></i> Typography</h2>
+      <p class="subtle">Pick a type theme. Choices update live and persist locally.</p>
+      <div class="grid-2">
+        <div class="font-option" data-font="inter" tabindex="0" role="button" aria-pressed="false">
+          <div class="font-sample" style="font-family: Inter, sans-serif;">The quick brown fox…</div>
+          <div class="font-name subtle">Inter</div>
+        </div>
+        <div class="font-option" data-font="playfair" tabindex="0" role="button" aria-pressed="false">
+          <div class="font-sample" style="font-family: 'Playfair Display', serif;">The quick brown fox…</div>
+          <div class="font-name subtle">Playfair Display</div>
+        </div>
+        <div class="font-option" data-font="mono" tabindex="0" role="button" aria-pressed="false">
+          <div class="font-sample" style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace;">The quick brown fox…</div>
+          <div class="font-name subtle">Monospace</div>
+        </div>
+        <div class="font-option" data-font="system" tabindex="0" role="button" aria-pressed="false">
+          <div class="font-sample" style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;">The quick brown fox…</div>
+          <div class="font-name subtle">System UI</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Inspiration -->
+    <section class="card">
+      <h2 class="card-title"><i class="fas fa-lightbulb card-icon" aria-hidden="true"></i> Inspiration Corner</h2>
+      <blockquote class="quote" id="quoteRegion" aria-live="polite">
+        <p id="quoteText">Loading quote…</p>
+        <footer id="quoteAuthor">—</footer>
+      </blockquote>
+    </section>
+
+    <!-- Price Ticker -->
+    <section class="card card-full">
+      <h2 class="card-title"><i class="fas fa-tags card-icon" aria-hidden="true"></i> What's With These Prices?</h2>
+      <div class="ticker">
+        <div class="ticker-track" id="tickerTrack"></div>
+      </div>
+      <p class="subtle">Data from <code>data/prices.csv</code>. Append rows; deltas compute automatically.</p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <small>© 2025 NetHealth 2025</small>
+  </footer>
+
+  <!-- JS: theme first (fonts/variables), then dashboard -->
+  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>
