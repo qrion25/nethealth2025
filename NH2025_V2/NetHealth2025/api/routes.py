@@ -1,6 +1,6 @@
 # api/routes.py
 from __future__ import annotations
-from flask import Blueprint, jsonify, current_app
+from flask import Blueprint, jsonify
 from pathlib import Path
 import json, csv
 from collections import defaultdict
@@ -42,10 +42,6 @@ def load_prices_latest_with_change() -> list[dict]:
 
     CSV columns (required):
       date,item,price
-
-    - date must be ISO-ish (YYYY-MM-DD) or anything datetime can parse
-    - item is a string
-    - price is a float
     """
     if not PRICES_PATH.exists():
         return []
@@ -70,15 +66,14 @@ def load_prices_latest_with_change() -> list[dict]:
 
     result = []
     for item, lst in by_item.items():
-        lst.sort(key=lambda x: (x["dt"] is None, x["dt"]))  # None first safeguard, then date
+        lst.sort(key=lambda x: (x["dt"] is None, x["dt"]))  # safeguard
         if not lst:
             continue
         latest = lst[-1]["price"]
         prev = lst[-2]["price"] if len(lst) >= 2 else None
 
         if prev is None:
-            change = None
-            direction = "flat"
+            change, direction = None, "flat"
         else:
             delta = latest - prev
             if abs(delta) < 1e-9:
@@ -134,5 +129,15 @@ def weather():
         "conditions": "Sunny"
     })
 
-    # alias so app.py can import api_bp
+
+@bp.get("/system")
+def api_system():
+    """
+    Returns system information collected server-side.
+    """
+    from services.system_info import get_system_info
+    return jsonify(get_system_info())
+
+
+# Alias so app.py can import consistently
 api_bp = bp

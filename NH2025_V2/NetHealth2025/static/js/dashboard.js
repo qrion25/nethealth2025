@@ -1,3 +1,4 @@
+// static/js/dashboard.js
 // ------------------ Utilities ------------------
 const $ = (id) => document.getElementById(id);
 
@@ -18,33 +19,6 @@ function safeSetText(id, text) {
   if (el) el.textContent = text;
 }
 
-// ------------------ Theme ------------------
-const themeToggleBtn = $("themeToggle");
-
-function setTheme(mode) {
-  // allow theme.css to own the variables, we only flip helper classes
-  document.body.classList.toggle("theme-dark", mode === "dark");
-  document.body.classList.toggle("theme-light", mode !== "dark");
-
-  // update button UI if the control exists
-  if (themeToggleBtn) {
-    const icon = themeToggleBtn.querySelector("i");
-    const text = themeToggleBtn.querySelector("span");
-    if (icon && text) {
-      if (mode === "dark") { icon.className = "fas fa-sun"; text.textContent = "Light"; }
-      else { icon.className = "fas fa-moon"; text.textContent = "Dark"; }
-    }
-  }
-  localStorage.setItem("theme", mode);
-}
-
-if (themeToggleBtn) {
-  themeToggleBtn.addEventListener("click", () => {
-    const next = document.body.classList.contains("theme-dark") ? "light" : "dark";
-    setTheme(next);
-  });
-}
-
 // ------------------ Time ------------------
 function updateClock() {
   const el = $("timeValue");
@@ -59,7 +33,9 @@ async function loadWeather() {
     if (data && typeof data.temperature_f !== "undefined") {
       safeSetText("tempValue", `${data.temperature_f}°`);
       if (data.location) safeSetText("locationValue", data.location);
-      if (data.condition) safeSetText("conditionValue", data.condition);
+      // FIX: check both 'conditions' and 'condition'
+      const cond = data.conditions ?? data.condition;
+      if (cond) safeSetText("conditionValue", cond);
     } else {
       safeSetText("tempValue", "--°");
     }
@@ -77,7 +53,6 @@ async function loadQuotes() {
     const payload = await fetchJSON("/api/quotes");
     quotes = payload.quotes || [];
   } catch {
-    // friendly fallback
     quotes = [
       { text: "The best way to predict the future is to create it.", author: "Peter Drucker" },
       { text: "Innovation distinguishes between a leader and a follower.", author: "Steve Jobs" },
@@ -90,25 +65,34 @@ async function loadQuotes() {
 function rotateQuote() {
   if (!quotes.length) return;
 
-  quoteIndex = (quoteIndex + 1) % quotes.length;
-  const { text, author } = quotes[quoteIndex];
+  let nextIndex;
+  do {
+    nextIndex = Math.floor(Math.random() * quotes.length);
+  } while (nextIndex === quoteIndex && quotes.length > 1);
 
+  quoteIndex = nextIndex;
+
+  const { text, author } = quotes[quoteIndex];
   const qt = $("quoteText");
   const qa = $("quoteAuthor");
-  const region = $("quoteRegion"); // optional aria-live container
+  const region = $("quoteRegion");
+  const FADE_MS = 600;
 
   if (qt && qa) {
-    qt.style.opacity = 0; qa.style.opacity = 0;
+    qt.classList.add("fade");
+    qa.classList.add("fade");
+
     setTimeout(() => {
       qt.textContent = `"${text}"`;
       qa.textContent = `— ${author || "Unknown"}`;
-      qt.style.opacity = 1; qa.style.opacity = 1;
+
+      qt.classList.remove("fade");
+      qa.classList.remove("fade");
 
       if (region && region.getAttribute("aria-live")) {
-        // assistive tech update
         region.setAttribute("data-last-quote", `${text} ${author || ""}`);
       }
-    }, 250);
+    }, FADE_MS);
   }
 }
 
@@ -119,7 +103,6 @@ async function loadPrices() {
     const payload = await fetchJSON("/api/prices");
     prices = payload.prices || [];
   } catch {
-    // soft fallback if the API is offline
     prices = [
       { item: "Eggs (1 dozen)", price: 3.99, change: 0.10, direction: "up" },
       { item: "Milk (1 gal)", price: 4.29, change: -0.05, direction: "down" },
@@ -141,13 +124,11 @@ async function loadPrices() {
   };
 
   const html = prices.map(makePill).join("");
-  // Duplicate content for seamless loop
   track.innerHTML = html + html;
 }
 
-// ------------------ System (best-effort) ------------------
+// ------------------ System (best-effort, client) ------------------
 async function updateSystem() {
-  // Battery
   try {
     if ("getBattery" in navigator) {
       const bat = await navigator.getBattery();
@@ -160,9 +141,8 @@ async function updateSystem() {
       }
       if (txt) txt.textContent = `${level}%`;
     }
-  } catch { /* noop */ }
+  } catch {}
 
-  // Memory (Chrome only)
   try {
     if (performance && performance.memory) {
       const usedMB = Math.round(performance.memory.usedJSHeapSize / 1024 / 1024);
@@ -176,9 +156,8 @@ async function updateSystem() {
       }
       if (txt) txt.textContent = `${usedMB}MB`;
     }
-  } catch { /* noop */ }
+  } catch {}
 
-  // Network (online/offline quick hint)
   const netBar = $("networkBar");
   const netTxt = $("networkText");
   const online = navigator.onLine;
@@ -189,9 +168,118 @@ async function updateSystem() {
   if (netTxt) netTxt.textContent = online ? "Connected" : "Offline";
 }
 
-// reflect connectivity immediately
 window.addEventListener("online", updateSystem);
 window.addEventListener("offline", updateSystem);
+
+// ---- Network latency (client-measured) ----
+function classifyLatency(ms) {
+  if (ms <= 60) return "good";
+  if (ms <= 150) return "warning";
+  return "danger";
+}
+
+function updateSpeedUI(ms) {
+  const bar = document.getElementById("speedBar");
+  const txt = document.getElementById("speedText");
+  if (!bar || !txt) return;
+
+  if (typeof ms !== "number" || Number.isNaN(ms)) {
+    bar.style.width = "0%";
+    bar.className = "fill danger";
+    txt.textContent = "— ms";
+    return;
+  }
+
+  const pct = Math.max(20, Math.min(100, 100 - (ms / 300) * 80));
+  bar.style.width = `${pct}%`;
+  bar.className = `fill ${classifyLatency(ms)}`;
+  txt.textContent = `${Math.round(ms)} ms`;
+}
+
+async function measureLatency() {
+  try {
+    const t0 = performance.now();
+    const res = await fetch("/api/health", { cache: "no-store" });
+    const t1 = performance.now();
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    updateSpeedUI(t1 - t0);
+  } catch {
+    updateSpeedUI(NaN);
+  }
+}
+
+// -------- Internal System (server-provided) --------
+function fmtBytesMB(x) {
+  if (x == null) return "—";
+  return `${Math.round(x)}MB`;
+}
+function fmtBytesGB(x) {
+  if (x == null) return "—";
+  return `${Math.round(x)}GB`;
+}
+function fmtUptime(seconds) {
+  if (!seconds && seconds !== 0) return "—";
+  const d = Math.floor(seconds / 86400);
+  const h = Math.floor((seconds % 86400) / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  return d ? `${d}d ${h}h` : `${h}h ${m}m`;
+}
+
+async function loadSystemFromServer() {
+  try {
+    const data = await fetchJSON("/api/system");
+
+    const cpuText = [];
+    if (data.cpu) cpuText.push(data.cpu);
+    if (typeof data.cpu_cores === "number") cpuText.push(`${data.cpu_cores} cores`);
+    document.getElementById("internalCpu")?.replaceChildren(document.createTextNode(cpuText.join(" · ") || "—"));
+
+    const up = typeof data.uptime_seconds === "number" ? fmtUptime(data.uptime_seconds) : "—";
+    document.getElementById("internalUptime")?.replaceChildren(document.createTextNode(up));
+
+    const mem = data.memory || {};
+    const memPct = Math.max(0, Math.min(100, Number(mem.percent) || 0));
+    const memBar = document.getElementById("internalMemBar");
+    if (memBar) {
+      memBar.style.width = `${memPct}%`;
+      memBar.className = `fill ${memPct < 60 ? "good" : memPct < 80 ? "warning" : "danger"}`;
+    }
+    const memText = `${fmtBytesMB(mem.used_mb)} / ${fmtBytesMB(mem.total_mb)} (${memPct.toFixed(0)}%)`;
+    document.getElementById("internalMemText")?.replaceChildren(document.createTextNode(memText));
+
+    const sto = data.storage || {};
+    const stoPct = Math.max(0, Math.min(100, Number(sto.percent) || 0));
+    const stoBar = document.getElementById("internalDiskBar");
+    if (stoBar) {
+      stoBar.style.width = `${stoPct}%`;
+      stoBar.className = `fill ${stoPct < 70 ? "good" : stoPct < 90 ? "warning" : "danger"}`;
+    }
+    const stoText = `${fmtBytesGB(sto.used_gb)} / ${fmtBytesGB(sto.total_gb)} (${stoPct.toFixed(0)}%)`;
+    document.getElementById("internalDiskText")?.replaceChildren(document.createTextNode(stoText));
+
+    // Network
+    const net = data.network || {};
+    const online = net.online ? "Online" : "Offline";
+
+    const label = net.interface_friendly || net.interface || "";
+    const iface = label ? ` · ${label}` : "";
+
+    const latencyVal = Number.isFinite(net.rtt_ms)
+      ? Math.round(net.rtt_ms)
+      : (Number.isFinite(net.latency_ms) ? Math.round(net.latency_ms) : null);
+
+    const down = Number.isFinite(net.downlink_mbps) ? ` · ${net.downlink_mbps.toFixed(1)} Mbps` : "";
+    const eff  = net.effective_type ? ` · ${net.effective_type}` : "";
+    const lat  = (latencyVal !== null) ? ` · ${latencyVal} ms` : "";
+
+    document.getElementById("internalNet")?.replaceChildren(
+      document.createTextNode(`${online}${iface}${eff}${down}${lat}`)
+    );
+
+  } catch (e) {
+    console.warn("Failed to load /api/system", e);
+  }
+}
 
 // ------------------ Init + lifecycle ------------------
 let timers = [];
@@ -201,6 +289,8 @@ function startTimers() {
   timers.push(setInterval(rotateQuote, 15000));
   timers.push(setInterval(loadPrices, 5 * 60 * 1000));
   timers.push(setInterval(updateSystem, 30 * 1000));
+  timers.push(setInterval(loadSystemFromServer, 60 * 1000));
+  timers.push(setInterval(measureLatency, 30 * 1000));
 }
 
 function clearTimers() {
@@ -209,22 +299,19 @@ function clearTimers() {
 }
 
 function init() {
-  // theme
-  const saved = localStorage.getItem("theme");
-  setTheme(saved === "dark" ? "dark" : "light");
+  window.NetHealthTheme?.initThemeUI();
 
-  // first paints
   updateClock();
   loadWeather();
   loadQuotes();
   loadPrices();
   updateSystem();
+  loadSystemFromServer();
+  measureLatency();
 
-  // timers
   startTimers();
 }
 
-// Pause heavy work when tab is hidden (saves battery/CPU)
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     clearTimers();
@@ -232,9 +319,10 @@ document.addEventListener("visibilitychange", () => {
     updateClock();
     loadPrices();
     updateSystem();
+    loadSystemFromServer();
+    measureLatency();
     startTimers();
   }
 });
 
-// Kick off when DOM is ready (safer than IIFE if scripts are deferred or loaded early)
 document.addEventListener("DOMContentLoaded", init);
