@@ -32,8 +32,36 @@ It’s designed as a sandbox project to demonstrate real-time updates of system 
 ⸻
 
 ## Project Structure
-
-
+'''
+NetHealth2025
+├── api
+│   ├── __init__.py
+│   └── routes.py          # Defines all API endpoints
+├── app.py                  # Flask entrypoint
+├── README.md               # Project documentation
+├── requirements.txt        # Python dependencies
+├── data
+│   ├── prices.csv          # CSV input for price ticker
+│   └── quotes.json         # JSON input for inspirational quotes
+├── services
+│   ├── __init__.py
+│   └── system_info.py      # Cross-platform system metrics collection
+├── static
+│   ├── css
+│   │   ├── main.css        # Base styles
+│   │   └── themes.css      # Theme overrides + dark mode
+│   ├── js
+│   │   ├── dashboard.js    # Client-side dashboard logic
+│   │   └── themes.js       # Theme/font handling logic
+│   └── img                 # Placeholder for images/screenshots
+├── templates
+│   └── index.html          # Dashboard HTML (Jinja2 template)
+├── scripts
+│   └── dev_run.sh          # Helper script for local dev run
+└── tests
+    ├── conftest.py         # Pytest configuration
+    └── test_system_info.py # Unit test for system_info service
+'''
 ⸻
 
 ## Setup & Installation
