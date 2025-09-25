@@ -32,7 +32,7 @@ It’s designed as a sandbox project to demonstrate real-time updates of system 
 ⸻
 
 ## Project Structure
-'''
+```
 NetHealth2025
 ├── api
 │   ├── __init__.py
@@ -61,7 +61,7 @@ NetHealth2025
 └── tests
     ├── conftest.py         # Pytest configuration
     └── test_system_info.py # Unit test for system_info service
-'''
+```
 ⸻
 
 ## Setup & Installation
