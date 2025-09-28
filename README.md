@@ -69,25 +69,29 @@ NetHealth2025
 1. **Clone the repo**
 
    ```bash
-   git clone https://github.com/yourusername/nethealth2025.git
+   git clone https://github.com/qrion25/nethealth2025.git
    cd nethealth2025
 
-	2.	Create a virtual environment
+2.	**Create a virtual environment**
 
 python3 -m venv .venv
 source .venv/bin/activate
 
 
-	3.	Install dependencies
+3.	**Install dependencies**
 
 pip install -r requirements.txt
 
 
-	4.	Run the app
+4.	**Run the app**
 
 python app.py
 
+By default the app runs on port 5050. Open:
 Open http://127.0.0.1:5050 in your browser.
+
+You can also specify a custom port (e.g., 5051):
+python3 app.py --port 5051
 
 ⸻
 
@@ -140,6 +144,10 @@ Additional Themes:
 ![Sunset](static/img/sunset_theme_light.png)  
 ![Forest](static/img/forrest_theme_light.png)  
 ![Terminal](static/img/terminal_theme_light.png)
+
+⸻
+### Changelog
+v0.2.0 - Added argparse port selection, updated quotes, and polished API
 
 ⸻
 Contact
