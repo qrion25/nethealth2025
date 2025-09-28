@@ -109,43 +109,44 @@ python app.py
 
 ⸻
 
-API Endpoints
-	•	/api/health → Health check ({"ok": true})
-	•	/api/version → App version info
-	•	/api/quotes → Returns list of quotes
-	•	/api/prices → Returns price list with computed deltas
-	•	/api/weather → Returns stub weather info
-	•	/api/system → Returns system information (CPU, memory, storage, uptime, network latency, etc.)
+## API Endpoints
+- `/api/health` → Health check (`{"ok": true}`)
+- `/api/version` → App version info
+- `/api/quotes` → Returns list of quotes
+- `/api/prices` → Returns price list with computed deltas
+- `/api/weather` → Returns stub weather info
+- `/api/system` → Returns system information (CPU, memory, storage, uptime, network latency, etc.)
 
 ⸻
 
-Development Notes
-	•	Static Assets are served via static/. Add new CSS or JS here.
-	•	Templates use Jinja2 (templates/index.html) and reference Flask’s url_for for assets.
-	•	Data Files (prices.csv, quotes.json) can be edited manually to update the dashboard without restarting the app.
-	•	Themes & Fonts are handled by themes.css + themes.js.
-	•	System Metrics use psutil when available for cross-platform support (Mac, Linux, Windows).
+## Development Notes
+- Static assets are served via `static/`. Add new CSS or JS here.
+- Templates use Jinja2 (`templates/index.html`) and reference Flask’s `url_for` for assets.
+- Data files (`prices.csv`, `quotes.json`) can be edited manually to update the dashboard without restarting the app.
+- Themes & Fonts are handled by `themes.css` + `themes.js`.
+- System metrics use **psutil** when available for cross-platform support (Mac, Linux, Windows).
 
 ⸻
 
-Testing
+## Testing
 
 Unit tests are included for the system information service.
 
 Run tests with:
 
+```bash
 pytest -v
-
+```
 
 ⸻
 
-Roadmap
-	•	Connect /api/weather to a real weather API.
-	•	Expand system metrics with network throughput.
-	•	Add persistent storage (SQLite or Postgres).
-	•	Dockerize for easy deployment.
-	•	Package a “no-terminal” static version for direct HTML usage.
-	•	Improve latency tests with multi-host pings.
+## Roadmap
+- Connect /api/weather to a real weather API.
+- Expand system metrics with network throughput.
+- Add persistent storage (SQLite or Postgres).
+- Dockerize for easy deployment.
+- Package a “no-terminal” static version for direct HTML usage.
+- Improve latency tests with multi-host pings.
 
 ⸻
 ### Screenshots
