@@ -150,7 +150,6 @@ Additional Themes:
 v0.2.0 - Added argparse port selection, updated quotes, and polished API
 
 ⸻
-Contact
-	•	Personal: rigel.leonard@gmail.com
-	•	School: rigel.leonard31@bcmail.cuny.edu
-⸻
+### Contact
+- **Personal**: rigel.leonard@gmail.com  
+- **School**: rigel.leonard31@bcmail.cuny.edu
