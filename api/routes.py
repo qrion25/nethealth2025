@@ -2,9 +2,14 @@
 from __future__ import annotations
 from flask import Blueprint, jsonify
 from pathlib import Path
-import json, csv
+import json, csv, os
 from collections import defaultdict
 from datetime import datetime
+
+try:
+    import requests
+except ImportError:
+    requests = None
 
 bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -120,14 +125,49 @@ def prices():
 @bp.get("/weather")
 def weather():
     """
-    Stub for now so the UI has data.
-    Later you can hook a real weather provider or geolocation.
+    Returns current weather data from WeatherAPI.com.
+    Falls back to stub data if API key not configured or request fails.
     """
-    return jsonify({
-        "temperature_f": 72,
-        "location": "New York",
-        "conditions": "Sunny"
-    })
+    if not requests:
+        return jsonify({
+            "temperature_f": 72,
+            "location": "New York",
+            "conditions": "Install requests library"
+        })
+    
+    api_key = os.environ.get('WEATHERAPI_KEY')
+    
+    if not api_key:
+        # Fallback to stub data if no API key
+        return jsonify({
+            "temperature_f": 72,
+            "location": "New York",
+            "conditions": "Configure WEATHERAPI_KEY"
+        })
+    
+    try:
+        # Auto-detect location by IP, or specify location manually
+        # Use 'auto:ip' for automatic IP-based location
+        location = os.environ.get('WEATHER_LOCATION', 'auto:ip')
+        
+        url = f"http://api.weatherapi.com/v1/current.json?key={api_key}&q={location}"
+        
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+        data = response.json()
+        
+        return jsonify({
+            "temperature_f": round(data['current']['temp_f']),
+            "location": f"{data['location']['name']}, {data['location']['region']}",
+            "conditions": data['current']['condition']['text']
+        })
+    except Exception as e:
+        print(f"Weather API error: {e}")
+        return jsonify({
+            "temperature_f": "--",
+            "location": "Unavailable",
+            "conditions": "API Error"
+        })
 
 
 @bp.get("/system")
@@ -137,6 +177,32 @@ def api_system():
     """
     from services.system_info import get_system_info
     return jsonify(get_system_info())
+
+
+@bp.get("/network/devices")
+def network_devices():
+    """
+    Returns list of devices discovered from ARP cache.
+    """
+    try:
+        from services.network_devices import get_network_devices, guess_device_type
+        
+        devices = get_network_devices()
+        
+        # Enhance with device type guesses
+        for device in devices:
+            device['device_type'] = guess_device_type(device['vendor'], device['mac'])
+        
+        return jsonify({
+            "devices": devices,
+            "count": len(devices)
+        })
+    except Exception as e:
+        return jsonify({
+            "devices": [],
+            "count": 0,
+            "error": str(e)
+        }), 500
 
 
 # Alias so app.py can import consistently

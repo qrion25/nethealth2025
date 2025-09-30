@@ -79,7 +79,7 @@
     <!-- System Status (client best-effort) -->
     <section class="card" aria-labelledby="system-status-title">
       <h2 id="system-status-title" class="card-title">
-        <i class="fas fa-microchip card-icon" aria-hidden="true"></i> System Status
+        <i class="fas fa-microchip card-icon" aria-hidden="true"></i> Browser Status
       </h2>
       <div class="stack">
         <div class="status-row">
@@ -90,7 +90,7 @@
           </div>
         </div>
         <div class="status-row">
-          <div class="status-label"><i class="fas fa-globe" aria-hidden="true"></i> Memory</div>
+          <div class="status-label"><i class="fas fa-window-maximize" aria-hidden="true"></i> Tab Memory</div>
           <div class="status-value">
             <div class="bar" aria-hidden="true"><div class="fill warning" id="memoryBar" style="width:0%"></div></div>
             <span id="memoryText" aria-live="polite">N/A</span>
@@ -103,10 +103,10 @@
             <span id="networkText" aria-live="polite">Unknown</span>
           </div>
         </div>
-        <!-- Speed (client-measured latency) -->
+        <!-- Response Time (client-measured latency) -->
         <div class="status-row">
           <div class="status-label">
-            <i class="fas fa-bolt" aria-hidden="true"></i> Speed
+            <i class="fas fa-gauge-high" aria-hidden="true"></i> Response
           </div>
           <div class="status-value">
             <div class="bar" aria-hidden="true"><div class="fill good" id="speedBar" style="width:0%"></div></div>
@@ -144,9 +144,18 @@
 
     <!-- Inspiration -->
     <section class="card" aria-labelledby="inspiration-title">
-      <h2 id="inspiration-title" class="card-title">
-        <i class="fas fa-lightbulb card-icon" aria-hidden="true"></i> Inspiration Corner
-      </h2>
+      <div class="card-header-row">
+        <h2 id="inspiration-title" class="card-title">
+          <i class="fas fa-lightbulb card-icon" aria-hidden="true"></i> Inspiration Corner
+        </h2>
+        <button id="quoteRefresh"
+                class="icon-btn"
+                aria-label="Show another quote"
+                title="Show another quote">
+          <i class="fas fa-rotate-right" aria-hidden="true"></i>
+        </button>
+      </div>
+
       <blockquote class="quote" id="quoteRegion" aria-live="polite">
         <p id="quoteText">Loading quote…</p>
         <footer id="quoteAuthor">—</footer>
@@ -154,53 +163,63 @@
     </section>
 
     <!-- Internal System (server-provided) -->
-<section class="card" aria-labelledby="internal-system-title">
-  <h2 id="internal-system-title" class="card-title">
-    <i class="fas fa-server card-icon" aria-hidden="true"></i> Internal System
-  </h2>
+    <section class="card" aria-labelledby="internal-system-title">
+      <h2 id="internal-system-title" class="card-title">
+        <i class="fas fa-server card-icon" aria-hidden="true"></i> Server Status
+      </h2>
 
-  <div class="stack">
-    <!-- CPU / Uptime -->
-    <div class="status-row">
-      <div class="status-label"><i class="fas fa-microchip" aria-hidden="true"></i> CPU</div>
-      <div class="status-value">
-        <span id="internalCpu">—</span>
-      </div>
-    </div>
-    <div class="status-row">
-      <div class="status-label"><i class="fas fa-clock" aria-hidden="true"></i> Uptime</div>
-      <div class="status-value">
-        <span id="internalUptime">—</span>
-      </div>
-    </div>
+      <div class="stack">
+        <!-- CPU / Uptime -->
+        <div class="status-row">
+          <div class="status-label"><i class="fas fa-microchip" aria-hidden="true"></i> CPU</div>
+          <div class="status-value">
+            <span id="internalCpu">—</span>
+          </div>
+        </div>
+        <div class="status-row">
+          <div class="status-label"><i class="fas fa-clock" aria-hidden="true"></i> Uptime</div>
+          <div class="status-value">
+            <span id="internalUptime">—</span>
+          </div>
+        </div>
 
-    <!-- Memory -->
-    <div class="status-row">
-      <div class="status-label"><i class="fas fa-memory" aria-hidden="true"></i> Memory</div>
-      <div class="status-value">
-        <div class="bar" aria-hidden="true"><div class="fill" id="internalMemBar" style="width:0%"></div></div>
-        <span id="internalMemText">—</span>
-      </div>
-    </div>
+        <!-- Memory -->
+        <div class="status-row">
+          <div class="status-label"><i class="fas fa-memory" aria-hidden="true"></i> Memory</div>
+          <div class="status-value">
+            <div class="bar" aria-hidden="true"><div class="fill" id="internalMemBar" style="width:0%"></div></div>
+            <span id="internalMemText">—</span>
+          </div>
+        </div>
 
-    <!-- Storage -->
-    <div class="status-row">
-      <div class="status-label"><i class="fas fa-hdd" aria-hidden="true"></i> Storage</div>
-      <div class="status-value">
-        <div class="bar" aria-hidden="true"><div class="fill" id="internalDiskBar" style="width:0%"></div></div>
-        <span id="internalDiskText">—</span>
-      </div>
-    </div>
+        <!-- Storage -->
+        <div class="status-row">
+          <div class="status-label"><i class="fas fa-hdd" aria-hidden="true"></i> Storage</div>
+          <div class="status-value">
+            <div class="bar" aria-hidden="true"><div class="fill" id="internalDiskBar" style="width:0%"></div></div>
+            <span id="internalDiskText">—</span>
+          </div>
+        </div>
 
-    <!-- Network -->
-    <div class="status-row">
-      <div class="status-label"><i class="fas fa-network-wired" aria-hidden="true"></i> Network</div>
-      <div class="status-value">
-        <span id="internalNet">—</span>
+        <!-- Network -->
+        <div class="status-row">
+          <div class="status-label"><i class="fas fa-network-wired" aria-hidden="true"></i> Network</div>
+          <div class="status-value">
+            <span id="internalNet">—</span>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-</section>
+    </section>
+
+    <!-- Network Devices -->
+    <section class="card card-full" aria-labelledby="network-devices-title">
+      <h2 id="network-devices-title" class="card-title">
+        <i class="fas fa-network-wired card-icon" aria-hidden="true"></i> Network Devices
+      </h2>
+      <div class="devices-grid" id="devicesGrid">
+        <p class="subtle" style="text-align:center;">Loading devices...</p>
+      </div>
+    </section>
 
     <!-- Price Ticker -->
     <section class="card card-full" aria-labelledby="prices-title">
@@ -210,7 +229,6 @@
       <div class="ticker" role="marquee" aria-label="Grocery prices scrolling list">
         <div class="ticker-track" id="tickerTrack"></div>
       </div>
-      <p class="subtle">Data from <code>data/prices.csv</code>. Append rows; deltas compute automatically.</p>
     </section>
   </main>
 
@@ -220,7 +238,7 @@
 
   <noscript><p style="text-align:center;margin:1rem">This app works best with JavaScript enabled.</p></noscript>
 
- <!-- JS (defer for faster first paint): theme first, then dashboard -->
+  <!-- JS (defer for faster first paint): theme first, then dashboard -->
   <script defer src="{{ url_for('static', filename='js/themes.js') }}"></script>
   <script defer src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 

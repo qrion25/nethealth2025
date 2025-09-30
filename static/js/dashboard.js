@@ -1,4 +1,5 @@
 // static/js/dashboard.js
+
 // ------------------ Utilities ------------------
 const $ = (id) => document.getElementById(id);
 
@@ -26,14 +27,13 @@ function updateClock() {
   el.textContent = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-// ------------------ Weather (placeholder -> API optional) ------------------
+// ------------------ Weather ------------------
 async function loadWeather() {
   try {
     const data = await fetchJSON("/api/weather");
     if (data && typeof data.temperature_f !== "undefined") {
       safeSetText("tempValue", `${data.temperature_f}°`);
       if (data.location) safeSetText("locationValue", data.location);
-      // FIX: check both 'conditions' and 'condition'
       const cond = data.conditions ?? data.condition;
       if (cond) safeSetText("conditionValue", cond);
     } else {
@@ -47,6 +47,7 @@ async function loadWeather() {
 // ------------------ Quotes ------------------
 let quotes = [];
 let quoteIndex = -1;
+let quoteBusy = false;
 
 async function loadQuotes() {
   try {
@@ -59,41 +60,72 @@ async function loadQuotes() {
       { text: "Focus on being productive instead of busy.", author: "Tim Ferriss" },
     ];
   }
+
   rotateQuote();
+
+  // Enable refresh button once quotes are ready
+  const refresh = $("quoteRefresh");
+  if (refresh) {
+    refresh.disabled = false;
+    refresh.addEventListener("click", () => {
+      if (quoteBusy) return;
+      refresh.classList.add("spinning");
+      rotateQuote(true); // force a different quote
+      setTimeout(() => refresh.classList.remove("spinning"), 650);
+    });
+  }
 }
 
-function rotateQuote() {
-  if (!quotes.length) return;
+function rotateQuote(force = false) {
+  if (!quotes.length || quoteBusy) return;
+  
+  const qt = $("quoteText");
+  const qa = $("quoteAuthor");
+  const region = $("quoteRegion");
+  
+  // Check if elements exist before proceeding
+  if (!qt || !qa) return;
+  
+  quoteBusy = true;
 
   let nextIndex;
-  do {
+  
+  if (force && quotes.length > 1) {
+    // When forced, guarantee a different quote
+    do {
+      nextIndex = Math.floor(Math.random() * quotes.length);
+    } while (nextIndex === quoteIndex);
+  } else {
+    // Normal rotation can be same or different
     nextIndex = Math.floor(Math.random() * quotes.length);
-  } while (nextIndex === quoteIndex && quotes.length > 1);
+  }
 
   quoteIndex = nextIndex;
 
   const { text, author } = quotes[quoteIndex];
-  const qt = $("quoteText");
-  const qa = $("quoteAuthor");
-  const region = $("quoteRegion");
   const FADE_MS = 600;
 
-  if (qt && qa) {
-    qt.classList.add("fade");
-    qa.classList.add("fade");
+  // Start fade out
+  qt.classList.add("fade");
+  qa.classList.add("fade");
 
-    setTimeout(() => {
-      qt.textContent = `"${text}"`;
-      qa.textContent = `— ${author || "Unknown"}`;
+  setTimeout(() => {
+    // Update content
+    qt.textContent = `"${text}"`;
+    qa.textContent = `— ${author || "Unknown"}`;
 
-      qt.classList.remove("fade");
-      qa.classList.remove("fade");
+    // Fade back in
+    qt.classList.remove("fade");
+    qa.classList.remove("fade");
 
-      if (region && region.getAttribute("aria-live")) {
-        region.setAttribute("data-last-quote", `${text} ${author || ""}`);
-      }
-    }, FADE_MS);
-  }
+    // Update aria-live region if present
+    if (region && region.getAttribute("aria-live")) {
+      region.setAttribute("data-last-quote", `${text} ${author || ""}`);
+    }
+    
+    // Reset busy flag AFTER fade completes
+    quoteBusy = false;
+  }, FADE_MS);
 }
 
 // ------------------ Prices Ticker ------------------
@@ -124,10 +156,11 @@ async function loadPrices() {
   };
 
   const html = prices.map(makePill).join("");
+  // duplicate content for seamless scroll
   track.innerHTML = html + html;
 }
 
-// ------------------ System (best-effort, client) ------------------
+// ------------------ System (client best-effort) ------------------
 async function updateSystem() {
   try {
     if ("getBattery" in navigator) {
@@ -232,7 +265,9 @@ async function loadSystemFromServer() {
     const cpuText = [];
     if (data.cpu) cpuText.push(data.cpu);
     if (typeof data.cpu_cores === "number") cpuText.push(`${data.cpu_cores} cores`);
-    document.getElementById("internalCpu")?.replaceChildren(document.createTextNode(cpuText.join(" · ") || "—"));
+    document.getElementById("internalCpu")?.replaceChildren(
+      document.createTextNode(cpuText.join(" · ") || "—")
+    );
 
     const up = typeof data.uptime_seconds === "number" ? fmtUptime(data.uptime_seconds) : "—";
     document.getElementById("internalUptime")?.replaceChildren(document.createTextNode(up));
@@ -257,10 +292,8 @@ async function loadSystemFromServer() {
     const stoText = `${fmtBytesGB(sto.used_gb)} / ${fmtBytesGB(sto.total_gb)} (${stoPct.toFixed(0)}%)`;
     document.getElementById("internalDiskText")?.replaceChildren(document.createTextNode(stoText));
 
-    // Network
     const net = data.network || {};
     const online = net.online ? "Online" : "Offline";
-
     const label = net.interface_friendly || net.interface || "";
     const iface = label ? ` · ${label}` : "";
 
@@ -275,9 +308,69 @@ async function loadSystemFromServer() {
     document.getElementById("internalNet")?.replaceChildren(
       document.createTextNode(`${online}${iface}${eff}${down}${lat}`)
     );
-
   } catch (e) {
     console.warn("Failed to load /api/system", e);
+  }
+}
+
+// ------------------ Network Devices ------------------
+function getDeviceIcon(deviceType) {
+  const iconMap = {
+    'Router/AP': 'fa-wifi',
+    'Mobile Device': 'fa-mobile-screen',
+    'Computer': 'fa-laptop',
+    'Smart Device': 'fa-lightbulb',
+    'Gaming Console': 'fa-gamepad',
+    'Printer': 'fa-print',
+    'Unknown': 'fa-question-circle'
+  };
+  return iconMap[deviceType] || 'fa-question-circle';
+}
+
+async function loadNetworkDevices() {
+  const grid = document.getElementById('devicesGrid');
+  if (!grid) return;
+
+  try {
+    const data = await fetchJSON('/api/network/devices');
+    const devices = data.devices || [];
+
+    if (devices.length === 0) {
+      grid.innerHTML = '<p class="subtle" style="text-align:center;">No devices found in ARP cache. Try accessing other devices on your network first.</p>';
+      return;
+    }
+
+    grid.innerHTML = devices.map(device => `
+      <div class="device-card">
+        <div class="device-header">
+          <i class="fas ${getDeviceIcon(device.device_type)} device-icon" aria-hidden="true"></i>
+          <div class="device-info">
+            <h3>${device.ip}</h3>
+            <p class="device-type">${device.device_type}</p>
+          </div>
+        </div>
+        <div class="device-details">
+          <div class="device-detail">
+            <span class="label">MAC Address</span>
+            <span class="value">${device.mac}</span>
+          </div>
+          <div class="device-detail">
+            <span class="label">Vendor</span>
+            <span class="value">${device.vendor}</span>
+          </div>
+          ${device.interface !== 'N/A' ? `
+          <div class="device-detail">
+            <span class="label">Interface</span>
+            <span class="value">${device.interface}</span>
+          </div>
+          ` : ''}
+        </div>
+      </div>
+    `).join('');
+
+  } catch (error) {
+    console.error('Error loading network devices:', error);
+    grid.innerHTML = '<p class="subtle" style="text-align:center;">Failed to load network devices.</p>';
   }
 }
 
@@ -286,11 +379,12 @@ let timers = [];
 
 function startTimers() {
   timers.push(setInterval(updateClock, 1000));
-  timers.push(setInterval(rotateQuote, 15000));
+  timers.push(setInterval(() => rotateQuote(), 15000));
   timers.push(setInterval(loadPrices, 5 * 60 * 1000));
   timers.push(setInterval(updateSystem, 30 * 1000));
   timers.push(setInterval(loadSystemFromServer, 60 * 1000));
   timers.push(setInterval(measureLatency, 30 * 1000));
+  timers.push(setInterval(loadNetworkDevices, 2 * 60 * 1000)); // Refresh every 2 minutes
 }
 
 function clearTimers() {
@@ -299,16 +393,20 @@ function clearTimers() {
 }
 
 function init() {
+  // Init theme system
   window.NetHealthTheme?.initThemeUI();
 
+  // First paints
   updateClock();
   loadWeather();
-  loadQuotes();
+  loadQuotes();        // also wires the refresh button
   loadPrices();
   updateSystem();
   loadSystemFromServer();
   measureLatency();
+  loadNetworkDevices();
 
+  // Timers
   startTimers();
 }
 
@@ -321,6 +419,7 @@ document.addEventListener("visibilitychange", () => {
     updateSystem();
     loadSystemFromServer();
     measureLatency();
+    loadNetworkDevices();
     startTimers();
   }
 });

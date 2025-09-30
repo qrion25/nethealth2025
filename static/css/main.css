@@ -1,3 +1,4 @@
+/* static/css/main.css */
 /* === Bridge your file to the shared theme tokens === */
 :root{
   /* Your existing palette kept as fallbacks */
@@ -143,18 +144,25 @@ body.theme-dark .bar{ background: rgba(255,255,255,0.12); }
 .fill.warning{ background: var(--warn); }
 .fill.danger{ background: var(--danger); }
 
+/* Inspiration card should use flexbox to distribute space */
+.card[aria-labelledby="inspiration-title"] {
+  display: flex;
+  flex-direction: column;
+}
 
-/* Quote block takes full card height and centers its contents */
+/* Quote block grows to fill available space and centers its content */
 .quote {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: flex-start;
-  height: 100%;
+  flex: 1; /* Grow to fill available space after header */
   margin: 0;
   text-align: left;
-  transform: translateY(-15%);
+  min-height: 150px; /* Ensure some minimum height */
+  transform: translateY(-8%); /* Shift up slightly without covering button */
   transition: transform 300ms ease-in-out, opacity 600ms ease-in-out;
+  pointer-events: none; /* Allow clicks to pass through to button */
 }
 
 .quote p,
@@ -162,6 +170,7 @@ body.theme-dark .bar{ background: rgba(255,255,255,0.12); }
   transition: opacity 600ms ease-in-out, color 200ms ease-in-out;
   line-height: 1.5;
   margin: 0;
+  pointer-events: auto; /* Re-enable for text selection */
 }
 
 /* class toggled by JS during transitions */
@@ -199,5 +208,137 @@ body.theme-dark .price-pill{ background: rgba(255,255,255,0.08); }
 .price-down{ color: var(--danger); }
 .price-flat{ color: var(--muted); }
 
+/* Network Devices Grid */
+.devices-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.device-card {
+  background: rgba(0,0,0,0.03);
+  border: 1px solid var(--card-border);
+  border-radius: calc(var(--radius) - 4px);
+  padding: 1rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+body.theme-dark .device-card {
+  background: rgba(255,255,255,0.05);
+}
+
+.device-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.device-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.device-icon {
+  font-size: 1.5rem;
+  color: var(--accent);
+}
+
+.device-info h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.device-info .device-type {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+.device-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.875rem;
+}
+
+.device-detail {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.device-detail .label {
+  color: var(--muted);
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.device-detail .value {
+  font-family: var(--font-base);
+  font-weight: 500;
+  text-align: right;
+  word-break: break-word;
+  max-width: 180px;
+}
+
+@media (max-width: 600px) {
+  .devices-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Footer */
 .site-footer{ text-align:center; padding: 1rem 0 2rem; color: var(--muted); }
+
+/* === Inspiration Corner header row (title + refresh button) === */
+.card-header-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:.75rem;
+  position: relative;
+  z-index: 1; /* Ensure header stays above quote block */
+}
+
+/* Icon button for quote refresh */
+.icon-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:.35rem;
+  padding:.25rem .5rem;
+  border-radius:999px;
+  border:1px solid var(--card-border);
+  background:transparent;
+  color:var(--fg);
+  cursor:pointer;
+  position: relative;
+  z-index: 2; /* Ensure button stays clickable */
+}
+
+.icon-btn:hover{
+  background: color-mix(in srgb, var(--fg) 10%, transparent);
+}
+
+.icon-btn:focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:2px;
+}
+
+/* Make the refresh glyph adopt the theme accent (like other card icons) */
+.icon-btn i{
+  color: var(--accent);
+}
+
+/* Spin animation when clicked */
+.icon-btn.spinning i{
+  animation: spin 0.6s linear;
+}
+
+@keyframes spin{
+  to { transform: rotate(360deg); }
+}
