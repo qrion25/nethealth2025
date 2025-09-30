@@ -93,3 +93,5 @@ scripts/dev_run.sh
 
 # Env files
 .env
+# Local archives/backups
+Archive/
