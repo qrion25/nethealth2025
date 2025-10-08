@@ -46,6 +46,13 @@ function applyFont(key) {
   document.querySelectorAll("[data-font]").forEach(el => {
     el.classList.toggle("is-active", el.dataset.font === key);
   });
+
+  // NEW: Trigger custom event for split-flap integration
+  const fontChangeEvent = new CustomEvent('fontChanged', { 
+    detail: { font: key },
+    bubbles: true 
+  });
+  document.dispatchEvent(fontChangeEvent);
 }
 
 function toggleDark() {
@@ -57,8 +64,30 @@ function initThemeUI() {
   // Restore saved prefs
   applyDarkMode(localStorage.getItem("nh.dark") === "1");
   applyTheme(localStorage.getItem("nh.theme") || "nethealth");
-  applyFont(localStorage.getItem("nh.font") || "inter");
+  
+  // NEW: Store initial font for event triggering
+  const savedFont = localStorage.getItem("nh.font") || "inter";
+  
+  // Apply font styles
+  const font = FONT_MAP[savedFont] || FONT_MAP.inter;
+  document.documentElement.style.setProperty("--font-base", font.css);
+  document.documentElement.style.setProperty("--font-display", font.css);
+  
+  // Update active state
+  document.querySelectorAll("[data-font]").forEach(el => {
+    el.classList.toggle("is-active", el.dataset.font === savedFont);
+  });
+  
   syncToggleUI();
+
+  // NEW: Trigger initial font event after a brief delay to ensure DOM is ready
+  setTimeout(() => {
+    const initialEvent = new CustomEvent('fontChanged', { 
+      detail: { font: savedFont },
+      bubbles: true 
+    });
+    document.dispatchEvent(initialEvent);
+  }, 100);
 
   // Theme chips
   document.querySelectorAll("[data-theme-chip]").forEach(chip => {
@@ -71,7 +100,7 @@ function initThemeUI() {
     });
   });
 
-  // Font chips
+  // Font chips (updated to use applyFont which now triggers the event)
   document.querySelectorAll("[data-font]").forEach(chip => {
     chip.addEventListener("click", () => applyFont(chip.dataset.font));
   });

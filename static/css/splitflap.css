@@ -1,0 +1,186 @@
+/* static/css/splitflap.css */
+/* Split-flap display styles for NetHealth 2025 */
+
+/* =========================================================
+   SPLIT-FLAP CORE MECHANICS
+   These styles create the flip effect - don't modify
+   ========================================================= */
+
+/* Container for split-flap display */
+.splitflap-time {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: clamp(1.6rem, 6vw + 0.2rem, 3.0rem);
+}
+
+/* One segment = a tile with top/bottom halves */
+.splitflap-time .segment {
+  position: relative;
+  display: inline-block;
+  margin: 0 2px;
+  width: 0.75em; /* Proportional to font-size */
+}
+
+/* Clearfix */
+.splitflap-time:after {
+  content: " ";
+  display: table;
+  clear: both;
+}
+
+/* Top and bottom halves */
+.splitflap-time .segment ol {
+  padding: 0;
+  margin: 0;
+  position: relative;
+  list-style: none;
+}
+
+/* Each <li> is a full glyph */
+.splitflap-time .segment li {
+  position: absolute;
+  display: block;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  text-align: center;
+  height: 0.48em; /* Half the tile height */
+  width: 100%;
+  text-transform: none;
+  line-height: 0.96em;
+}
+
+/* Base items in each stack */
+.splitflap-time .top li:first-child { position: static; }
+.splitflap-time .bottom li:last-child { position: static; }
+
+/* ========== TOP HALF (folds downward) ========== */
+.splitflap-time .top li {
+  color: var(--fg);
+  background-color: var(--card-bg);
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  transition: transform 110ms 0ms ease-out;
+  transform: scaleY(1);
+  transform-origin: 50% 100%; /* Hinge on bottom edge */
+  border: 1px solid var(--card-border);
+  border-bottom: none;
+}
+
+.splitflap-time .top li.falling {
+  transform: scaleY(0);
+}
+
+/* Tiny gap between halves */
+.splitflap-time .segment ol.top {
+  margin-bottom: 0.03em;
+  line-height: 1;
+}
+
+/* ========== BOTTOM HALF (folds upward) ========== */
+.splitflap-time .bottom li {
+  color: var(--fg);
+  line-height: 0;
+  background-color: var(--card-bg);
+  transition: transform 100ms 60ms ease-in;
+  border-bottom-right-radius: 6px;
+  border-bottom-left-radius: 6px;
+  transform-origin: 50% 0; /* Hinge on top edge */
+  transform: scaleY(0); /* Closed by default */
+  border: 1px solid var(--card-border);
+  border-top: none;
+  opacity: 0.9;
+}
+
+/* Current and falling bottom flaps are visible */
+.splitflap-time .bottom li.current,
+.splitflap-time .bottom li.falling {
+  transform: scaleY(1);
+}
+
+/* ========== COLON SEPARATOR ========== */
+.splitflap-colon {
+  display: inline-block;
+  width: 0.3em;
+  margin: 0 2px;
+  font-weight: 700;
+  opacity: 0.85;
+  color: var(--fg);
+  line-height: 0.96em;
+}
+
+/* ========== THEME ADAPTATIONS ========== */
+
+/* Make split-flap tiles match NetHealth theme */
+body[data-theme="nethealth"] .splitflap-time .segment li {
+  font-family: ui-monospace, SFMono-Regular, Menlo, "Courier New", monospace;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* Sunset theme - warmer tones */
+body[data-theme="sunset"] .splitflap-time .top li {
+  background: linear-gradient(180deg, rgba(250, 129, 47, 0.15) 0%, var(--card-bg) 100%);
+}
+
+/* Forest theme - cool greens */
+body[data-theme="forest"] .splitflap-time .top li {
+  background: linear-gradient(180deg, rgba(34, 139, 34, 0.12) 0%, var(--card-bg) 100%);
+}
+
+/* Terminal theme - CRT glow effect */
+body[data-theme="terminal"] .splitflap-time .segment li {
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-weight: 500;
+  text-shadow: 0 0 4px rgba(0, 255, 136, 0.4);
+  letter-spacing: 0.05em;
+}
+
+body[data-theme="terminal"] .splitflap-time .top li {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+body[data-theme="terminal"] .splitflap-time .bottom li {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+/* Dark mode adjustments */
+body.theme-dark .splitflap-time .top li {
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+}
+
+body.theme-dark .splitflap-time .bottom li {
+  box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* ========== RESPONSIVE SIZING ========== */
+@media (max-width: 560px) {
+  .splitflap-time {
+    font-size: clamp(1.4rem, 8vw + 0.1rem, 2.2rem);
+    gap: 1px;
+  }
+  
+  .splitflap-time .segment {
+    margin: 0 1px;
+  }
+  
+  .splitflap-colon {
+    margin: 0 1px;
+  }
+}
+
+/* ========== HIDE DEFAULT TIME, SHOW SPLIT-FLAP ========== */
+#timeValue.hidden {
+  display: none;
+}
+
+#splitflap-time-container {
+  display: none; /* Hidden by default */
+}
+
+#splitflap-time-container.active {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
