@@ -1,92 +1,135 @@
 item,price,date
-Apples (1 lb),2.29,2025-07-20
-Apples (1 lb),2.32,2025-09-24
+Apples (1 lb),2.29,2025-08-30
+Apples (1 lb),2.30,2025-09-05
+Apples (1 lb),2.31,2025-09-10
+Apples (1 lb),2.32,2025-09-15
+Apples (1 lb),2.33,2025-09-20
+Apples (1 lb),2.33,2025-09-25
+Apples (1 lb),2.34,2025-10-01
 Apples (1 lb),2.34,2025-10-04
-"Bacon, sliced (1 lb)",6.92,2025-07-20
-"Bacon, sliced (1 lb)",6.94,2025-09-24
-"Bacon, sliced (1 lb)",6.96,2025-10-04
-Bananas (1 lb),0.65,2025-07-20
-Bananas (1 lb),0.66,2025-09-24
+
+Bacon, sliced (1 lb),6.92,2025-08-30
+Bacon, sliced (1 lb),6.93,2025-09-05
+Bacon, sliced (1 lb),6.94,2025-09-10
+Bacon, sliced (1 lb),6.95,2025-09-15
+Bacon, sliced (1 lb),6.96,2025-09-20
+Bacon, sliced (1 lb),6.96,2025-09-25
+Bacon, sliced (1 lb),6.96,2025-10-01
+Bacon, sliced (1 lb),6.96,2025-10-04
+
+Bananas (1 lb),0.65,2025-08-30
+Bananas (1 lb),0.66,2025-09-05
+Bananas (1 lb),0.66,2025-09-10
+Bananas (1 lb),0.66,2025-09-15
+Bananas (1 lb),0.66,2025-09-20
+Bananas (1 lb),0.66,2025-09-25
+Bananas (1 lb),0.66,2025-10-01
 Bananas (1 lb),0.66,2025-10-04
-Bread (1 lb),1.83,2025-07-20
-Bread (1 lb),1.82,2025-09-24
+
+Bread (1 lb),1.83,2025-08-30
+Bread (1 lb),1.82,2025-09-05
+Bread (1 lb),1.82,2025-09-10
+Bread (1 lb),1.81,2025-09-15
+Bread (1 lb),1.80,2025-09-20
+Bread (1 lb),1.80,2025-09-25
+Bread (1 lb),1.80,2025-10-01
 Bread (1 lb),1.80,2025-10-04
-Butter (1 lb),4.67,2025-07-20
-Butter (1 lb),4.74,2025-09-24
+
+Butter (1 lb),4.67,2025-08-30
+Butter (1 lb),4.70,2025-09-05
+Butter (1 lb),4.72,2025-09-10
+Butter (1 lb),4.75,2025-09-15
+Butter (1 lb),4.78,2025-09-20
+Butter (1 lb),4.80,2025-09-25
+Butter (1 lb),4.81,2025-10-01
 Butter (1 lb),4.81,2025-10-04
-Cheddar Cheese (1 lb),5.66,2025-07-20
-Cheddar Cheese (1 lb),5.72,2025-09-24
-Cheddar Cheese (1 lb),5.80,2025-10-04
-Chicken Breast (1 lb),4.40,2025-07-20
-Chicken Breast (1 lb),4.41,2025-09-24
-Chicken Breast (1 lb),4.43,2025-10-04
-Coffee (1 lb),8.44,2025-07-20
-Coffee (1 lb),8.66,2025-09-24
-Coffee (1 lb),8.82,2025-10-04
-Eggs (1 dozen),4.93,2025-07-20
-Eggs (1 dozen),4.93,2025-09-24
-Eggs (1 dozen),4.95,2025-10-04
-"Flour, all-purpose (1 lb)",0.72,2025-07-20
-"Flour, all-purpose (1 lb)",0.71,2025-09-24
-"Flour, all-purpose (1 lb)",0.70,2025-10-04
-Ground Chuck (1 lb),5.56,2025-07-20
-Ground Chuck (1 lb),5.57,2025-09-24
-Ground Chuck (1 lb),5.59,2025-10-04
-Milk (1 gal),4.54,2025-07-20
-Milk (1 gal),4.55,2025-09-24
-Milk (1 gal),4.62,2025-10-04
-Potatoes (1 lb),1.09,2025-07-20
-Potatoes (1 lb),1.10,2025-09-24
-Potatoes (1 lb),1.11,2025-10-04
-"Sugar, white (1 lb)",1.02,2025-07-20
-"Sugar, white (1 lb)",1.01,2025-09-24
-"Sugar, white (1 lb)",1.00,2025-10-04
-Tomatoes (1 lb),2.14,2025-07-20
-Tomatoes (1 lb),2.15,2025-09-24
-Tomatoes (1 lb),2.17,2025-10-04
-item,price,date
-Eggs (1 dozen),5.12,2025-09-20
-Milk (1 gal),4.45,2025-09-20
-Bread (1 lb),1.84,2025-09-20
-Chicken Breast (1 lb),4.20,2025-09-20
-Coffee (1 lb),8.87,2025-09-20
-Eggs (1 dozen),4.89,2025-09-26
-Milk (1 gal),4.59,2025-09-26
-Bread (1 lb),1.79,2025-09-26
-Chicken Breast (1 lb),4.49,2025-09-26
-Coffee (1 lb),8.49,2025-09-26
-Bananas (1 lb),0.64,2025-09-20
-Apples (1 lb),2.35,2025-09-20
-Potatoes (1 lb),1.08,2025-09-20
-Ground Chuck (1 lb),5.49,2025-09-20
+
+Cheddar Cheese (1 lb),5.66,2025-08-30
+Cheddar Cheese (1 lb),5.70,2025-09-05
+Cheddar Cheese (1 lb),5.73,2025-09-10
+Cheddar Cheese (1 lb),5.77,2025-09-15
 Cheddar Cheese (1 lb),5.79,2025-09-20
-Butter (1 lb),4.79,2025-09-20
-Sugar, white (1 lb),0.99,2025-09-20
-Flour, all-purpose (1 lb),0.69,2025-09-20
-Tomatoes (1 lb),2.19,2025-09-20
-Bacon, sliced (1 lb),6.89,2025-09-20
-Bananas (1 lb),0.66,2025-09-26
-Apples (1 lb),2.29,2025-09-26
-Potatoes (1 lb),1.11,2025-09-26
-Ground Chuck (1 lb),5.59,2025-09-26
-Cheddar Cheese (1 lb),5.69,2025-09-26
-Butter (1 lb),4.69,2025-09-26
-Sugar, white (1 lb),1.02,2025-09-26
-Flour, all-purpose (1 lb),0.71,2025-09-26
-Tomatoes (1 lb),2.12,2025-09-26
-Bacon, sliced (1 lb),6.95,2025-09-26
-Eggs (1 dozen),4.79,2025-09-28
-Milk (1 gal),4.62,2025-09-28
-Bread (1 lb),1.82,2025-09-28
-Chicken Breast (1 lb),4.53,2025-09-28
-Coffee (1 lb),8.61,2025-09-28
-Bananas (1 lb),0.67,2025-09-28
-Apples (1 lb),2.31,2025-09-28
-Potatoes (1 lb),1.12,2025-09-28
-Ground Chuck (1 lb),5.63,2025-09-28
-Cheddar Cheese (1 lb),5.72,2025-09-28
-Butter (1 lb),4.74,2025-09-28
-Sugar, white (1 lb),1.03,2025-09-28
-Flour, all-purpose (1 lb),0.72,2025-09-28
-Tomatoes (1 lb),2.15,2025-09-28
-Bacon, sliced (1 lb),6.98,2025-09-28
+Cheddar Cheese (1 lb),5.79,2025-09-25
+Cheddar Cheese (1 lb),5.80,2025-10-01
+Cheddar Cheese (1 lb),5.80,2025-10-04
+
+Chicken Breast (1 lb),4.40,2025-08-30
+Chicken Breast (1 lb),4.42,2025-09-05
+Chicken Breast (1 lb),4.43,2025-09-10
+Chicken Breast (1 lb),4.43,2025-09-15
+Chicken Breast (1 lb),4.43,2025-09-20
+Chicken Breast (1 lb),4.43,2025-09-25
+Chicken Breast (1 lb),4.43,2025-10-01
+Chicken Breast (1 lb),4.43,2025-10-04
+
+Coffee (1 lb),8.44,2025-08-30
+Coffee (1 lb),8.55,2025-09-05
+Coffee (1 lb),8.65,2025-09-10
+Coffee (1 lb),8.75,2025-09-15
+Coffee (1 lb),8.82,2025-09-20
+Coffee (1 lb),8.82,2025-09-25
+Coffee (1 lb),8.82,2025-10-01
+Coffee (1 lb),8.82,2025-10-04
+
+Eggs (1 dozen),4.93,2025-08-30
+Eggs (1 dozen),4.95,2025-09-05
+Eggs (1 dozen),4.98,2025-09-10
+Eggs (1 dozen),5.01,2025-09-15
+Eggs (1 dozen),5.03,2025-09-20
+Eggs (1 dozen),5.04,2025-09-25
+Eggs (1 dozen),5.05,2025-10-01
+Eggs (1 dozen),4.95,2025-10-04
+
+Flour, all-purpose (1 lb),0.72,2025-08-30
+Flour, all-purpose (1 lb),0.71,2025-09-05
+Flour, all-purpose (1 lb),0.71,2025-09-10
+Flour, all-purpose (1 lb),0.71,2025-09-15
+Flour, all-purpose (1 lb),0.70,2025-09-20
+Flour, all-purpose (1 lb),0.70,2025-09-25
+Flour, all-purpose (1 lb),0.70,2025-10-01
+Flour, all-purpose (1 lb),0.70,2025-10-04
+
+Ground Chuck (1 lb),5.56,2025-08-30
+Ground Chuck (1 lb),5.58,2025-09-05
+Ground Chuck (1 lb),5.59,2025-09-10
+Ground Chuck (1 lb),5.59,2025-09-15
+Ground Chuck (1 lb),5.59,2025-09-20
+Ground Chuck (1 lb),5.59,2025-09-25
+Ground Chuck (1 lb),5.59,2025-10-01
+Ground Chuck (1 lb),5.59,2025-10-04
+
+Milk (1 gal),4.54,2025-08-30
+Milk (1 gal),4.57,2025-09-05
+Milk (1 gal),4.60,2025-09-10
+Milk (1 gal),4.62,2025-09-15
+Milk (1 gal),4.62,2025-09-20
+Milk (1 gal),4.62,2025-09-25
+Milk (1 gal),4.62,2025-10-01
+Milk (1 gal),4.62,2025-10-04
+
+Potatoes (1 lb),1.09,2025-08-30
+Potatoes (1 lb),1.10,2025-09-05
+Potatoes (1 lb),1.10,2025-09-10
+Potatoes (1 lb),1.10,2025-09-15
+Potatoes (1 lb),1.11,2025-09-20
+Potatoes (1 lb),1.11,2025-09-25
+Potatoes (1 lb),1.11,2025-10-01
+Potatoes (1 lb),1.11,2025-10-04
+
+Sugar, white (1 lb),1.02,2025-08-30
+Sugar, white (1 lb),1.01,2025-09-05
+Sugar, white (1 lb),1.01,2025-09-10
+Sugar, white (1 lb),1.00,2025-09-15
+Sugar, white (1 lb),1.00,2025-09-20
+Sugar, white (1 lb),1.00,2025-09-25
+Sugar, white (1 lb),1.00,2025-10-01
+Sugar, white (1 lb),1.00,2025-10-04
+
+Tomatoes (1 lb),2.14,2025-08-30
+Tomatoes (1 lb),2.15,2025-09-05
+Tomatoes (1 lb),2.16,2025-09-10
+Tomatoes (1 lb),2.17,2025-09-15
+Tomatoes (1 lb),2.17,2025-09-20
+Tomatoes (1 lb),2.17,2025-09-25
+Tomatoes (1 lb),2.17,2025-10-01
+Tomatoes (1 lb),2.17,2025-10-04
