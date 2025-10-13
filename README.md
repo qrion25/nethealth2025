@@ -72,6 +72,7 @@ NetHealth2025
 ```
 ⸻
 
+
 ## Setup & Installation
 
 1. **Clone the repo**
@@ -82,32 +83,81 @@ NetHealth2025
    ```
 
 2. **Create a virtual environment**
-   ```bash
-   python3 -m venv .venv
-   source .venv/bin/activate
-   ```
+
+   - **macOS / Linux:**
+     ```bash
+     python3 -m venv .venv
+     source .venv/bin/activate
+     ```
+
+   - **Windows (PowerShell or CMD):**
+     ```bash
+     python -m venv .venv
+     .venv\Scripts\activate
+     ```
 
 3. **Install dependencies**
    ```bash
-   pip3 install -r requirements.txt
+   pip install -r requirements.txt
    ```
 
 4. **Download OUI database** (for network device vendor lookup)
    ```bash
-   python3 scripts/download_oui.py
+   python scripts/download_oui.py
    ```
+   
+   *Note: Since you're in a virtual environment, `python` works on all platforms.*
 
 5. **Set up Weather API** (optional, but recommended)
    
    Sign up for a free account at [WeatherAPI.com](https://www.weatherapi.com/signup.aspx) and get your API key.
    
-   Set environment variables:
+   - **macOS / Linux:**
+     ```bash
+     export WEATHERAPI_KEY='your_api_key_here'
+     export WEATHER_LOCATION='New York City'  # Optional, defaults to auto IP detection
+     ```
+
+   - **Windows (PowerShell):**
+     ```powershell
+     $env:WEATHERAPI_KEY='your_api_key_here'
+     $env:WEATHER_LOCATION='New York City'
+     ```
+
+   - **Windows (CMD):**
+     ```cmd
+     set WEATHERAPI_KEY=your_api_key_here
+     set WEATHER_LOCATION=New York City
+     ```
+
+   To confirm environment variables are set:
+   - **macOS / Linux:** `echo $WEATHERAPI_KEY`
+   - **Windows (CMD):** `echo %WEATHERAPI_KEY%`
+   - **Windows (PowerShell):** `echo $env:WEATHERAPI_KEY`
+
+6. **Troubleshooting: "No module named 'dotenv'" error**
+   
+   If you encounter this error, install python-dotenv:
    ```bash
-   export WEATHERAPI_KEY='your_api_key_here'
-   export WEATHER_LOCATION='New York City'  # Optional, defaults to auto IP detection
+   pip install python-dotenv
+   ```
+   
+   Verify installation:
+   ```bash
+   pip show python-dotenv
    ```
 
-6. **Run the app**
+7. **Optional: Using a .env file** (recommended for persistent configuration)
+   
+   Instead of setting environment variables manually each time, create a `.env` file in your project root:
+   ```
+   WEATHERAPI_KEY=your_api_key_here
+   WEATHER_LOCATION=New York City
+   ```
+   
+   The app will automatically load this file when running. Don't forget to add `.env` to your `.gitignore` file.
+
+8. **Run the app**
    ```bash
    python app.py
    ```
@@ -117,20 +167,33 @@ NetHealth2025
 
    You can specify a custom port:
    ```bash
-   python3 app.py --port 5051
+   python app.py --port 5051
    ```
 
 ⸻
 
 ## Quick Start (TL;DR)
 
+**macOS / Linux:**
 ```bash
 git clone https://github.com/qrion25/nethealth2025.git
 cd nethealth2025
 python3 -m venv .venv && source .venv/bin/activate
-pip3 install -r requirements.txt
-python3 scripts/download_oui.py
+pip install -r requirements.txt
+python scripts/download_oui.py
 export WEATHERAPI_KEY='your_key'
+python app.py
+```
+
+**Windows (PowerShell):**
+```powershell
+git clone https://github.com/qrion25/nethealth2025.git
+cd nethealth2025
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+python scripts/download_oui.py
+$env:WEATHERAPI_KEY='your_key'
 python app.py
 ```
 
@@ -156,8 +219,8 @@ Without a WeatherAPI key, the dashboard will show placeholder weather data.
 To enable real weather:
 1. Sign up at https://www.weatherapi.com/signup.aspx
 2. Get your free API key (1 million calls/month)
-3. Set environment variable: `export WEATHERAPI_KEY='your_key'`
-4. Optionally specify location: `export WEATHER_LOCATION='Brooklyn'`
+3. Set environment variable: `export WEATHERAPI_KEY='your_key'` (macOS/Linux) or `$env:WEATHERAPI_KEY='your_key'` (Windows PowerShell)
+4. Optionally specify location: `export WEATHER_LOCATION='Brooklyn'` (macOS/Linux) or `$env:WEATHER_LOCATION='Brooklyn'` (Windows PowerShell)
 
 ### Using a .env file (Recommended)
 
@@ -173,12 +236,12 @@ Add to your `.gitignore`:
 .env
 ```
 
-Install python-dotenv:
+The app will automatically load environment variables from this file using python-dotenv. If you haven't already installed it:
 ```bash
-pip3 install python-dotenv
+pip install python-dotenv
 ```
 
-Update `app.py` at the top:
+Make sure your `app.py` includes at the top:
 ```python
 from dotenv import load_dotenv
 load_dotenv()
