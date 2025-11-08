@@ -105,8 +105,10 @@ async function loadWeather() {
 
     // Temperature → accent color
     let color = "var(--accent)";
-    if (temp <= 40) color = "#3B82F6";
-    else if (temp <= 60) color = "#10B981";
+    if (temp <= 40) color = "#2674f2ff";
+    else if (temp <= 50) color = "#59a0e3ff";
+    else if (temp <= 60) color = "#3cbeb4ff";
+    else if (temp <= 65) color = "#10B981";
     else if (temp <= 80) color = "#F59E0B";
     else color = "#EF4444";
 
@@ -146,7 +148,7 @@ async function loadWeather() {
 /** Dynamic Outfit Suggestion System */
 function getOutfitSuggestion(temp) {
   const outfits = [
-    { min: 100, text: "Way too hot — stay hydrated and wear breathable fabrics" },
+    { min: 100, text: "Stay hydrated, out of the sun, or inside if possible. Bathing suit and hat." },
     { min: 96, text: "Tank top and athletic shorts — beach or pool weather" },
     { min: 92, text: "Light tank top and shorts" },
     { min: 88, text: "T-shirt and shorts" },
@@ -154,7 +156,7 @@ function getOutfitSuggestion(temp) {
     { min: 80, text: "T-shirt and chinos" },
     { min: 76, text: "Light shirt or tee, comfy jeans" },
     { min: 72, text: "T-shirt with thin overshirt" },
-    { min: 68, text: "Light jacket or hoodie" },
+    { min: 68, text: "T-shirt or light long-sleeve, comfy pants" },
     { min: 64, text: "Long-sleeve top, light sweater" },
     { min: 60, text: "Sweater or fleece recommended" },
     { min: 56, text: "Sweater weather" },
