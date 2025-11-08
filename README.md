@@ -601,7 +601,13 @@ Contributions are welcome! Whether it's bug fixes, new features, or documentatio
 
 ## Changelog
 
-### v0.4.0 (Current)
+### v0.4.1 (Current)
+- Fixed duplicate device entries appearing for multi-interface hosts (e.g., en0/en13)
+- Added IP-based deduplication with merged interface listings
+- Sorted network device results by IP for consistent display
+- Verified macOS/Linux/Windows compatibility
+
+### v0.4.0
 - Added theme toggle for dark/light mode with colored icons (blue moon, yellow sun)
 - Added theme logo auto-swap using `MutationObserver`
 - Fixed Font Awesome integrity hash blocking icons
