@@ -1,7 +1,7 @@
 /* static/css/main.css */
-/* === Bridge your file to the shared theme tokens === */
+
 :root{
-  /* Your existing palette kept as fallbacks */
+  /* My existing palette kept as fallbacks */
   --bg-light: #F9FAFB;
   --bg-dark: #1a1a1a;
   --text-light: #111827;
@@ -28,7 +28,7 @@
   --font-display: "Playfair Display", Georgia, serif;
 }
 
-/* Optional: if you still want an explicit class for dark mode, keep it as a fallback */
+/* Optional: An explicit class for dark mode, keep it as a fallback */
 body.theme-dark{
   --bg: var(--bg-dark);
   --fg: var(--text-dark);
@@ -56,57 +56,126 @@ img, video, canvas, svg {
   height: auto; 
 }
 
-/* Header */
-.site-header{
-  position: sticky; 
-  top:0; 
-  z-index:10;
+/* =====================
+   Header + Branding
+   ===================== */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   backdrop-filter: blur(10px);
-  background: rgba(255,255,255,0.6);
+  -webkit-backdrop-filter: blur(10px);
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
   border-bottom: 1px solid var(--card-border);
+  transition: background 0.3s ease;
 }
-body.theme-dark .site-header{ background: rgba(0,0,0,0.3); }
 
-.header-container{
-  max-width: 1200px; 
-  margin: 0 auto; 
+body.theme-dark .site-header {
+  background: color-mix(in srgb, var(--bg-dark) 80%, transparent);
+}
+
+.header-container {
+  max-width: 1200px;
+  margin: 0 auto;
   padding: 0.75rem 1rem;
-  display:flex; 
-  align-items:center; 
-  justify-content:space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
-.brand{ 
-  font-family: var(--font-display); 
-  font-weight: 900; 
-  margin:0;
+
+/* --- Brand Layout --- */
+.brand-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.brand-logo {
+  height: clamp(1.2rem, 3.2vw + 0.25rem, 1.9rem);
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  will-change: transform;
+  cursor: pointer;
+}
+
+.brand-logo:hover {
+  transform: scale(1.04);
+  opacity: 0.9;
+}
+
+/* Theme-aware logo brightness for dark mode */
+body.theme-dark .brand-logo {
+  filter: brightness(1.05) contrast(1.05);
+}
+
+.brand {
+  font-family: var(--font-display);
+  font-weight: 900;
+  margin: 0;
   font-size: clamp(1rem, 4vw + 0.4rem, 1.5rem);
+  white-space: nowrap;
 }
-.accent{ color: var(--accent); }
 
-.theme-toggle{
-  display:inline-flex; 
-  align-items:center; 
-  gap:.5rem;
-  background: transparent; 
+.accent {
+  color: var(--accent);
+}
+
+/* --- Header Controls (Theme Toggle & Chips) --- */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Theme Toggle Button */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
   border: 1px solid var(--card-border);
-  padding:.5rem .75rem; 
-  border-radius: 999px; 
-  cursor:pointer;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  cursor: pointer;
   color: var(--fg);
-}
-
-.theme-toggle i,
-.theme-toggle span {
-  color: inherit;
+  transition: background 0.2s ease, transform 0.2s ease;
 }
 
 .theme-toggle:hover {
   background: color-mix(in srgb, var(--fg) 10%, transparent);
+  transform: translateY(-1px);
 }
 
 .theme-toggle:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+.theme-toggle i,
+.theme-toggle span {
+  color: inherit;
+  font-weight: 500;
+}
+
+/* Theme Toggle Icon Colors */
+.theme-toggle i {
+  transition: color 0.3s ease;
+}
+
+/* Moon icon in light mode - deep blue */
+body.theme-light .theme-toggle i.fa-moon {
+  color: #1e3a8a; /* Deep blue */
+}
+
+/* Sun icon in dark mode - yellow */
+body.theme-dark .theme-toggle i.fa-sun {
+  color: #fbbf24; /* Warm yellow */
 }
 
 /* Layout - Mobile First Approach */
@@ -258,38 +327,72 @@ body.theme-dark .bar{ background: rgba(255,255,255,0.12); }
   margin-top: 0.5rem;
 }
 
-/* Ticker */
-.ticker{
-  position: relative; 
-  overflow:hidden; 
+/* =====================
+   Price Ticker
+   ===================== */
+.ticker {
+  position: relative;
+  overflow: hidden;
   border-radius: calc(var(--radius) - 4px);
   border: 1px dashed var(--card-border);
 }
-.ticker-track{
-  display:inline-flex; 
-  gap: 1.5rem; 
-  padding: .75rem 1rem; 
+
+/* Wrap for drag-scroll */
+.ticker-container {
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.ticker-container::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+.ticker-track {
+  display: inline-flex;
+  gap: 2rem;
+  padding: 0.75rem 1rem;
   white-space: nowrap;
-  animation: ticker-scroll 46s linear infinite;
+  animation: ticker-scroll 75s linear infinite; /* slowed from 46s */
+  cursor: grab;
+  will-change: transform;
 }
-@keyframes ticker-scroll{
-  0%{ transform: translateX(0); }
-  100%{ transform: translateX(-50%); }
+
+.ticker-track:active {
+  cursor: grabbing;
+  animation-play-state: paused; /* stop animation while dragging */
 }
-.price-pill{
-  display:inline-flex; 
-  gap:.4rem; 
-  align-items:center;
-  padding: .3rem .55rem; 
+
+@keyframes ticker-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* Pills */
+.price-pill {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0.3rem 0.55rem;
   border-radius: 999px;
-  background: rgba(0,0,0,0.06);
+  background: rgba(0, 0, 0, 0.06);
   font-size: clamp(0.85rem, 1.5vw + 0.5rem, 0.9rem);
+  user-select: none;
+  transition: transform 0.2s ease, background 0.2s ease;
 }
-body.theme-dark .price-pill{ background: rgba(255,255,255,0.08); }
-/* NEW — price hikes = red, price drops = green */
-.price-up{ color: var(--danger); }     /* ▲ up = red */
-.price-down{ color: var(--accent-2); } /* ▼ down = green */
-.price-flat{ color: var(--muted); }
+
+body.theme-dark .price-pill { background: rgba(255,255,255,0.08); }
+
+/* NEW — Interactive hover */
+.price-pill:hover {
+  transform: scale(1.05);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+/* Direction colors */
+.price-up { color: var(--danger); }     /* ▲ up = red */
+.price-down { color: var(--accent-2); } /* ▼ down = green */
+.price-flat { color: var(--muted); }
 
 /* Network Devices Grid */
 .devices-grid {
@@ -492,7 +595,7 @@ section[aria-labelledby="local-conditions-title"] .grid-2 {
   
   .ticker-track {
     gap: 2.5rem;
-    animation-duration: 38s;
+    animation-duration: 48s;
   }
   
   .devices-grid {
@@ -546,4 +649,47 @@ section[aria-labelledby="local-conditions-title"] .grid-2 {
   section[aria-labelledby="local-conditions-title"] .grid-2 {
     gap: 0.5rem;
   }
+}
+
+/* Weather Icon & Outfit Suggestion */
+#tempWrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+/* Weather Icon */
+#weatherIcon {
+  font-size: clamp(1.2rem, 4vw + 0.2rem, 1.8rem);
+  color: var(--accent);
+  opacity: 0.8;
+  transition: opacity 0.3s ease, transform 0.3s ease, color 0.4s ease;
+}
+
+#weatherIcon:hover {
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+/* Outfit Suggestion — color-synced + responsive */
+#outfitSuggestion {
+  font-weight: 600;
+  font-size: clamp(0.85rem, 1.6vw + 0.25rem, 1.05rem);
+  transition: color 0.4s ease;
+  line-height: 1.25;
+  margin-top: 0.25rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* Weather Update Pulse Animation */
+@keyframes pulse-fade {
+  0% { opacity: 0.5; transform: scale(0.96); }
+  50% { opacity: 1; transform: scale(1.03); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.pulse-update {
+  animation: pulse-fade 0.6s ease-in-out;
 }

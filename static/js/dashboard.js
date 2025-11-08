@@ -1,5 +1,35 @@
 // static/js/dashboard.js
 
+// =====================
+// Theme Logo Auto-Swap
+// =====================
+function initThemeLogoSwap() {
+  const logo = document.querySelector('.theme-logo');
+  if (!logo) return;
+
+  const darkSrc = logo.dataset.dark;
+  const lightSrc = logo.dataset.light;
+
+  // Detect current theme and apply correct logo immediately
+    let logoTimer;
+    const applyLogo = () => {
+      clearTimeout(logoTimer);
+      logoTimer = setTimeout(() => {
+        const isDark = document.body.classList.contains('theme-dark');
+        logo.src = isDark ? darkSrc : lightSrc;
+      }, 100);
+    };
+
+  // Observe theme class changes on <body>
+  const observer = new MutationObserver(applyLogo);
+  observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+  // Initial set
+  applyLogo();
+}
+
+document.addEventListener('DOMContentLoaded', initThemeLogoSwap);
+
 // ------------------ Utilities ------------------
 const $ = (id) => document.getElementById(id);
 
@@ -29,18 +59,104 @@ function updateClock() {
 
 // ------------------ Weather ------------------
 async function loadWeather() {
+  const iconEl = $("weatherIcon");
+  const outfitEl = $("outfitSuggestion");
+  const tempEl = $("tempValue");
+
   try {
     const data = await fetchJSON("/api/weather");
-    if (data && typeof data.temperature_f !== "undefined") {
-      safeSetText("tempValue", `${data.temperature_f}°`);
-      if (data.location) safeSetText("locationValue", data.location);
-      const cond = data.conditions ?? data.condition;
-      if (cond) safeSetText("conditionValue", cond);
-    } else {
+    if (!data || typeof data.temperature_f === "undefined") {
       safeSetText("tempValue", "--°");
+      if (iconEl) iconEl.className = "fas fa-question-circle subtle";
+      if (outfitEl) outfitEl.textContent = "Temperature";
+      return;
     }
-  } catch {
+
+    const temp = data.temperature_f;
+    const cond = (data.conditions ?? data.condition ?? "").toLowerCase();
+    const loc = data.location || "—";
+    const conditionCode = data.current?.condition?.code ?? null;
+
+    safeSetText("tempValue", `${temp}°`);
+    safeSetText("locationValue", loc);
+    safeSetText("conditionValue", data.conditions || "—");
+
+    // Default icon logic
+    let iconClass = "fa-question-circle";
+    if (cond.includes("clear") || cond.includes("sun")) iconClass = "fa-sun";
+    else if (cond.includes("cloud") || cond.includes("overcast")) iconClass = "fa-cloud";
+    else if (cond.includes("rain") || cond.includes("drizzle")) iconClass = "fa-cloud-showers-heavy";
+    else if (cond.includes("snow")) iconClass = "fa-snowflake";
+    else if (cond.includes("storm") || cond.includes("thunder")) iconClass = "fa-bolt";
+    else if (cond.includes("fog") || cond.includes("mist") || cond.includes("haze")) iconClass = "fa-smog";
+    else if (cond.includes("wind")) iconClass = "fa-wind";
+
+    // WeatherAPI code → icon mapping (for precision)
+    const codeMap = {
+      1000: "fa-sun", // Clear
+      1003: "fa-cloud-sun", // Partly cloudy
+      1006: "fa-cloud", // Cloudy
+      1009: "fa-cloud", // Overcast
+      1030: "fa-smog", // Mist
+      1063: "fa-cloud-showers-heavy", // Rain
+      1087: "fa-bolt", // Thunder
+      1114: "fa-snowflake", // Snow
+      1135: "fa-smog", // Fog
+      1183: "fa-cloud-showers-heavy", // Light rain
+      1195: "fa-cloud-showers-heavy", // Heavy rain
+      1204: "fa-snowflake", // Sleet
+      1276: "fa-bolt", // Thunderstorm
+      1282: "fa-bolt"  // Severe thunderstorm
+    };
+    if (conditionCode && codeMap[conditionCode]) iconClass = codeMap[conditionCode];
+
+    // Outfit suggestion
+    let outfit = "";
+    if (temp >= 85) outfit = "Tank top & shorts weather";
+    else if (temp >= 70) outfit = "T-shirt weather";
+    else if (temp >= 55) outfit = "Light jacket recommended";
+    else if (temp >= 40) outfit = "Sweater or coat weather";
+    else outfit = "Bundle up — it's cold!";
+
+    // Temperature → color mapping
+    let color = "var(--accent)";
+    if (temp <= 40) color = "#3B82F6";
+    else if (temp <= 60) color = "#10B981";
+    else if (temp <= 80) color = "#F59E0B";
+    else color = "#EF4444";
+
+    // Animate icon fade + color pulse
+    if (iconEl) {
+      iconEl.style.opacity = 0;
+      setTimeout(() => {
+        iconEl.className = `fas ${iconClass}`;
+        iconEl.style.color = color;
+        iconEl.style.opacity = 1;
+        iconEl.classList.add("pulse-update");
+        setTimeout(() => iconEl.classList.remove("pulse-update"), 600);
+      }, 200);
+    }
+
+    // Animate temperature pulse
+    if (tempEl) {
+      tempEl.style.color = color;
+      tempEl.classList.add("pulse-update");
+      setTimeout(() => tempEl.classList.remove("pulse-update"), 600);
+    }
+
+    // Outfit — color synced + pulse
+    if (outfitEl) {
+      outfitEl.textContent = outfit;
+      outfitEl.style.color = color;
+      outfitEl.classList.add("pulse-update");
+      setTimeout(() => outfitEl.classList.remove("pulse-update"), 600);
+    }
+
+  } catch (err) {
+    console.warn("Weather load failed", err);
     safeSetText("tempValue", "--°");
+    if (iconEl) iconEl.className = "fas fa-question-circle subtle";
+    if (outfitEl) outfitEl.textContent = "Temperature";
   }
 }
 
@@ -158,6 +274,74 @@ async function loadPrices() {
   const html = prices.map(makePill).join("");
   // duplicate content for seamless scroll
   track.innerHTML = html + html;
+
+}
+
+// ------------------ Ticker Interactivity (drag-scroll) ------------------
+function enableTickerDrag() {
+  const track = document.getElementById("tickerTrack");
+  if (!track) return;
+
+  const container = track.parentElement;
+  if (!container) return;
+
+  // Ensure proper scroll container class (matches CSS)
+  container.classList.add("ticker-container");
+  container.style.overflowX = "auto";
+  container.style.scrollBehavior = "smooth";
+
+  let isDown = false;
+  let startX;
+  let scrollLeft;
+
+  // Mouse events
+  container.addEventListener("mousedown", (e) => {
+    isDown = true;
+    startX = e.pageX - container.offsetLeft;
+    scrollLeft = container.scrollLeft;
+    container.classList.add("active");
+    track.style.animationPlayState = "paused"; // pause animation
+  });
+
+  container.addEventListener("mouseleave", () => {
+    isDown = false;
+    container.classList.remove("active");
+    track.style.animationPlayState = "running";
+  });
+
+  container.addEventListener("mouseup", () => {
+    isDown = false;
+    container.classList.remove("active");
+    track.style.animationPlayState = "running";
+  });
+
+  container.addEventListener("mousemove", (e) => {
+    if (!isDown) return;
+    e.preventDefault();
+    const x = e.pageX - container.offsetLeft;
+    const walk = (x - startX) * 1.5; // drag sensitivity
+    container.scrollLeft = scrollLeft - walk;
+  });
+
+  // Touch events for mobile support
+  let touchStartX = 0;
+  let touchScrollLeft = 0;
+
+  container.addEventListener("touchstart", (e) => {
+    touchStartX = e.touches[0].pageX - container.offsetLeft;
+    touchScrollLeft = container.scrollLeft;
+    track.style.animationPlayState = "paused";
+  });
+
+  container.addEventListener("touchend", () => {
+    track.style.animationPlayState = "running";
+  });
+
+  container.addEventListener("touchmove", (e) => {
+    const x = e.touches[0].pageX - container.offsetLeft;
+    const walk = (x - touchStartX) * 1.5;
+    container.scrollLeft = touchScrollLeft - walk;
+  });
 }
 
 // ------------------ System (client best-effort) ------------------
@@ -408,6 +592,9 @@ function init() {
 
   // Timers
   startTimers();
+
+  // enable drag-scroll behavior for ticker
+  enableTickerDrag();
 }
 
 document.addEventListener("visibilitychange", () => {

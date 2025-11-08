@@ -4,30 +4,52 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>NetHealth 2025</title>
-  <meta name="description" content="A friendly, visual dashboard for NetHealth 2025 with themes, quotes, local stats and a fun price ticker." />
+  <meta name="description" content="A friendly, visual dashboard for NetHealth 2025 with themes, quotes, local stats, and a fun price ticker." />
 
   <!-- Performance: preconnects for web fonts/icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="dns-prefetch" href="//cdnjs.cloudflare.com" />
 
+  <!-- Favicon -->
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='img/favicon/apple-touch-icon.png') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='img/favicon/favicon-96x96.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='img/favicon/favicon-96x96.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='img/favicon/site.webmanifest') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon/favicon.ico') }}" />
+
   <!-- Fonts & Icons -->
   <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@300;400;600;700&display=swap" />
-  <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  
+        <link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" 
+      crossorigin="anonymous" 
+      referrerpolicy="no-referrer" />
 
   <!-- App CSS (themes first to define tokens, then main) -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
 </head>
+
 <body class="theme-light" data-theme="nethealth">
   <header class="site-header">
     <div class="header-container">
-      <h1 class="brand">NetHealth <span class="accent">2025</span></h1>
+
+  <!-- Brand -->
+  <div class="brand-wrapper">
+    <img 
+      src="{{ url_for('static', filename='img/nethealth2025_logo.png') }}"
+      data-light="{{ url_for('static', filename='img/nethealth2025_logo.png') }}"
+      data-dark="{{ url_for('static', filename='img/nethealth2025_logo.png') }}"
+      alt="NetHealth 2025 logo"
+      class="brand-logo theme-logo"
+    />
+    <h1 class="brand">NetHealth <span class="accent">2025</span></h1>
+  </div>
 
       <!-- Theme controls -->
-      <div class="header-actions" style="display:flex; align-items:center; gap:.5rem;">
+      <div class="header-actions">
         <div class="theme-chips" aria-label="Choose color theme" role="group">
           <button type="button" class="theme-chip is-active" data-theme-chip="nethealth">NetHealth</button>
           <button type="button" class="theme-chip" data-theme-chip="sunset">Sunset</button>
@@ -40,6 +62,7 @@
           <span>Dark</span>
         </button>
       </div>
+
     </div>
   </header>
 
@@ -56,10 +79,12 @@
       <h2 id="local-conditions-title" class="card-title">
         <i class="fas fa-cloud-sun card-icon" aria-hidden="true"></i> Local Conditions
       </h2>
-      <div class="grid-2" id="weatherBlock">
         <div class="center">
-          <div class="big" id="tempValue" aria-live="polite">--°</div>
-          <div class="label">Temperature</div>
+          <div class="big" id="tempWrapper" aria-live="polite">
+            <span id="tempValue">--°</span>
+            <i id="weatherIcon" class="fas fa-question-circle subtle"></i>
+          </div>
+          <div class="label" id="outfitSuggestion">Temperature</div>
         </div>
         <div class="center">
           <div class="big" id="timeValue" aria-live="polite">--:--</div>
@@ -238,8 +263,8 @@
 
   <noscript><p style="text-align:center;margin:1rem">This app works best with JavaScript enabled.</p></noscript>
 
-  <!-- JS (defer for faster first paint): theme first, then dashboard -->
-  <script defer src="{{ url_for('static', filename='js/themes.js') }}"></script>
+  <!-- JS (themes first without defer, then dashboard) -->
+  <script src="{{ url_for('static', filename='js/themes.js') }}"></script>
   <script defer src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 
 </body>
