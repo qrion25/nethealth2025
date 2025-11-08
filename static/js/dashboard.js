@@ -68,11 +68,11 @@ async function loadWeather() {
     if (!data || typeof data.temperature_f === "undefined") {
       safeSetText("tempValue", "--°");
       if (iconEl) iconEl.className = "fas fa-question-circle subtle";
-      if (outfitEl) outfitEl.textContent = "Temperature";
+      if (outfitEl) outfitEl.textContent = "Temperature unavailable";
       return;
     }
 
-    const temp = data.temperature_f;
+    const temp = data.current?.temp_f ?? data.temperature_f;
     const cond = (data.conditions ?? data.condition ?? "").toLowerCase();
     const loc = data.location || "—";
     const conditionCode = data.current?.condition?.code ?? null;
@@ -81,7 +81,7 @@ async function loadWeather() {
     safeSetText("locationValue", loc);
     safeSetText("conditionValue", data.conditions || "—");
 
-    // Default icon logic
+    // Weather icon detection
     let iconClass = "fa-question-circle";
     if (cond.includes("clear") || cond.includes("sun")) iconClass = "fa-sun";
     else if (cond.includes("cloud") || cond.includes("overcast")) iconClass = "fa-cloud";
@@ -91,41 +91,26 @@ async function loadWeather() {
     else if (cond.includes("fog") || cond.includes("mist") || cond.includes("haze")) iconClass = "fa-smog";
     else if (cond.includes("wind")) iconClass = "fa-wind";
 
-    // WeatherAPI code → icon mapping (for precision)
+    // WeatherAPI code map override (for precision)
     const codeMap = {
-      1000: "fa-sun", // Clear
-      1003: "fa-cloud-sun", // Partly cloudy
-      1006: "fa-cloud", // Cloudy
-      1009: "fa-cloud", // Overcast
-      1030: "fa-smog", // Mist
-      1063: "fa-cloud-showers-heavy", // Rain
-      1087: "fa-bolt", // Thunder
-      1114: "fa-snowflake", // Snow
-      1135: "fa-smog", // Fog
-      1183: "fa-cloud-showers-heavy", // Light rain
-      1195: "fa-cloud-showers-heavy", // Heavy rain
-      1204: "fa-snowflake", // Sleet
-      1276: "fa-bolt", // Thunderstorm
-      1282: "fa-bolt"  // Severe thunderstorm
+      1000: "fa-sun", 1003: "fa-cloud-sun", 1006: "fa-cloud", 1009: "fa-cloud",
+      1030: "fa-smog", 1063: "fa-cloud-showers-heavy", 1087: "fa-bolt",
+      1114: "fa-snowflake", 1135: "fa-smog", 1183: "fa-cloud-showers-heavy",
+      1195: "fa-cloud-showers-heavy", 1204: "fa-snowflake", 1276: "fa-bolt", 1282: "fa-bolt"
     };
     if (conditionCode && codeMap[conditionCode]) iconClass = codeMap[conditionCode];
 
-    // Outfit suggestion
-    let outfit = "";
-    if (temp >= 85) outfit = "Tank top & shorts weather";
-    else if (temp >= 70) outfit = "T-shirt weather";
-    else if (temp >= 55) outfit = "Light jacket recommended";
-    else if (temp >= 40) outfit = "Sweater or coat weather";
-    else outfit = "Bundle up — it's cold!";
+    // Outfit suggestion logic
+    const outfit = getOutfitSuggestion(temp);
 
-    // Temperature → color mapping
+    // Temperature → accent color
     let color = "var(--accent)";
     if (temp <= 40) color = "#3B82F6";
     else if (temp <= 60) color = "#10B981";
     else if (temp <= 80) color = "#F59E0B";
     else color = "#EF4444";
 
-    // Animate icon fade + color pulse
+    // Animate weather icon and text updates
     if (iconEl) {
       iconEl.style.opacity = 0;
       setTimeout(() => {
@@ -137,14 +122,12 @@ async function loadWeather() {
       }, 200);
     }
 
-    // Animate temperature pulse
     if (tempEl) {
       tempEl.style.color = color;
       tempEl.classList.add("pulse-update");
       setTimeout(() => tempEl.classList.remove("pulse-update"), 600);
     }
 
-    // Outfit — color synced + pulse
     if (outfitEl) {
       outfitEl.textContent = outfit;
       outfitEl.style.color = color;
@@ -156,9 +139,44 @@ async function loadWeather() {
     console.warn("Weather load failed", err);
     safeSetText("tempValue", "--°");
     if (iconEl) iconEl.className = "fas fa-question-circle subtle";
-    if (outfitEl) outfitEl.textContent = "Temperature";
+    if (outfitEl) outfitEl.textContent = "Temperature unavailable";
   }
 }
+
+/** Dynamic Outfit Suggestion System */
+function getOutfitSuggestion(temp) {
+  const outfits = [
+    { min: 100, text: "Way too hot — stay hydrated and wear breathable fabrics" },
+    { min: 96, text: "Tank top and athletic shorts — beach or pool weather" },
+    { min: 92, text: "Light tank top and shorts" },
+    { min: 88, text: "T-shirt and shorts" },
+    { min: 84, text: "Short-sleeve shirt, light cottons" },
+    { min: 80, text: "T-shirt and chinos" },
+    { min: 76, text: "Light shirt or tee, comfy jeans" },
+    { min: 72, text: "T-shirt with thin overshirt" },
+    { min: 68, text: "Light jacket or hoodie" },
+    { min: 64, text: "Long-sleeve top, light sweater" },
+    { min: 60, text: "Sweater or fleece recommended" },
+    { min: 56, text: "Sweater weather" },
+    { min: 52, text: "Light coat and long pants" },
+    { min: 48, text: "Medium coat or thick hoodie" },
+    { min: 44, text: "Coat and scarf recommended" },
+    { min: 40, text: "Heavy coat weather" },
+    { min: 36, text: "Winter jacket and gloves" },
+    { min: 32, text: "Puffer jacket, hat, and scarf" },
+    { min: 28, text: "Bundle up — thermal layers needed" },
+    { min: 20, text: "Freezing — thermal layers essential" },
+    { min: 10, text: "Extreme cold — stay indoors if possible" },
+    { min: -10, text: "Subzero danger — full winter gear required" },
+  ];
+
+  for (const o of outfits) {
+    if (temp >= o.min) return o.text;
+  }
+
+  return "Bundle up — it's freezing outside!";
+}
+
 
 // ------------------ Quotes ------------------
 let quotes = [];
