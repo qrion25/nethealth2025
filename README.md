@@ -265,11 +265,6 @@ python scripts/download_oui.py
 export WEATHERAPI_KEY='your_key'
 python app.py
 ```
-### Or even faster, if you’ve already installed everything:
-```bash
-source .venv/bin/activate
-python app.py
-```
 
 ### Windows (PowerShell):
 ```powershell
