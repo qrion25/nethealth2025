@@ -188,7 +188,7 @@ python scripts/download_oui.py
 
 ### 5. Set up Weather API (Optional, but Recommended)
 
-Sign up for a free account at [WeatherAPI.com](https://www.weatherapi.com/signup.aspx) and get your API key.
+Sign up for a free account at <a href="https://www.weatherapi.com/signup.aspx" target="_blank" rel="noopener noreferrer">WeatherAPI.com</a> and get your API key.
 
 **macOS / Linux:**
 ```bash
