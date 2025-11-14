@@ -4,31 +4,27 @@
 // Theme Logo Auto-Swap
 // =====================
 function initThemeLogoSwap() {
-  const logo = document.querySelector('.theme-logo');
+  const logo = document.querySelector(".theme-logo");
   if (!logo) return;
 
   const darkSrc = logo.dataset.dark;
   const lightSrc = logo.dataset.light;
 
-  // Detect current theme and apply correct logo immediately
-    let logoTimer;
-    const applyLogo = () => {
-      clearTimeout(logoTimer);
-      logoTimer = setTimeout(() => {
-        const isDark = document.body.classList.contains('theme-dark');
-        logo.src = isDark ? darkSrc : lightSrc;
-      }, 100);
-    };
+  let logoTimer;
 
-  // Observe theme class changes on <body>
+  const applyLogo = () => {
+    clearTimeout(logoTimer);
+    logoTimer = setTimeout(() => {
+      const isDark = document.body.classList.contains("theme-dark");
+      logo.src = isDark ? darkSrc : lightSrc;
+    }, 100);
+  };
+
   const observer = new MutationObserver(applyLogo);
-  observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
 
-  // Initial set
   applyLogo();
 }
-
-document.addEventListener('DOMContentLoaded', initThemeLogoSwap);
 
 // ------------------ Utilities ------------------
 const $ = (id) => document.getElementById(id);
@@ -50,11 +46,21 @@ function safeSetText(id, text) {
   if (el) el.textContent = text;
 }
 
+function pulseElement(el, color) {
+  if (!el) return;
+  if (color) el.style.color = color;
+  el.classList.add("pulse-update");
+  setTimeout(() => el.classList.remove("pulse-update"), 600);
+}
+
 // ------------------ Time ------------------
 function updateClock() {
   const el = $("timeValue");
   if (!el) return;
-  el.textContent = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  el.textContent = new Date().toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 // ------------------ Weather ------------------
@@ -65,6 +71,7 @@ async function loadWeather() {
 
   try {
     const data = await fetchJSON("/api/weather");
+
     if (!data || typeof data.temperature_f === "undefined") {
       safeSetText("tempValue", "--°");
       if (iconEl) iconEl.className = "fas fa-question-circle subtle";
@@ -81,7 +88,7 @@ async function loadWeather() {
     safeSetText("locationValue", loc);
     safeSetText("conditionValue", data.conditions || "—");
 
-    // Weather icon detection
+    // Weather icon detection (text-based)
     let iconClass = "fa-question-circle";
     if (cond.includes("clear") || cond.includes("sun")) iconClass = "fa-sun";
     else if (cond.includes("cloud") || cond.includes("overcast")) iconClass = "fa-cloud";
@@ -91,12 +98,22 @@ async function loadWeather() {
     else if (cond.includes("fog") || cond.includes("mist") || cond.includes("haze")) iconClass = "fa-smog";
     else if (cond.includes("wind")) iconClass = "fa-wind";
 
-    // WeatherAPI code map override (for precision)
+    // Optional WeatherAPI code override
     const codeMap = {
-      1000: "fa-sun", 1003: "fa-cloud-sun", 1006: "fa-cloud", 1009: "fa-cloud",
-      1030: "fa-smog", 1063: "fa-cloud-showers-heavy", 1087: "fa-bolt",
-      1114: "fa-snowflake", 1135: "fa-smog", 1183: "fa-cloud-showers-heavy",
-      1195: "fa-cloud-showers-heavy", 1204: "fa-snowflake", 1276: "fa-bolt", 1282: "fa-bolt"
+      1000: "fa-sun",
+      1003: "fa-cloud-sun",
+      1006: "fa-cloud",
+      1009: "fa-cloud",
+      1030: "fa-smog",
+      1063: "fa-cloud-showers-heavy",
+      1087: "fa-bolt",
+      1114: "fa-snowflake",
+      1135: "fa-smog",
+      1183: "fa-cloud-showers-heavy",
+      1195: "fa-cloud-showers-heavy",
+      1204: "fa-snowflake",
+      1276: "fa-bolt",
+      1282: "fa-bolt",
     };
     if (conditionCode && codeMap[conditionCode]) iconClass = codeMap[conditionCode];
 
@@ -112,31 +129,24 @@ async function loadWeather() {
     else if (temp <= 80) color = "#F59E0B";
     else color = "#EF4444";
 
-    // Animate weather icon and text updates
+    // Animate weather icon
     if (iconEl) {
       iconEl.style.opacity = 0;
       setTimeout(() => {
         iconEl.className = `fas ${iconClass}`;
         iconEl.style.color = color;
         iconEl.style.opacity = 1;
-        iconEl.classList.add("pulse-update");
-        setTimeout(() => iconEl.classList.remove("pulse-update"), 600);
+        pulseElement(iconEl);
       }, 200);
     }
 
-    if (tempEl) {
-      tempEl.style.color = color;
-      tempEl.classList.add("pulse-update");
-      setTimeout(() => tempEl.classList.remove("pulse-update"), 600);
-    }
+    // Animate temp and outfit
+    pulseElement(tempEl, color);
 
     if (outfitEl) {
       outfitEl.textContent = outfit;
-      outfitEl.style.color = color;
-      outfitEl.classList.add("pulse-update");
-      setTimeout(() => outfitEl.classList.remove("pulse-update"), 600);
+      pulseElement(outfitEl, color);
     }
-
   } catch (err) {
     console.warn("Weather load failed", err);
     safeSetText("tempValue", "--°");
@@ -149,36 +159,34 @@ async function loadWeather() {
 function getOutfitSuggestion(temp) {
   const outfits = [
     { min: 100, text: "Stay hydrated, out of the sun, or inside if possible. Bathing suit and hat." },
-    { min: 96, text: "Tank top and athletic shorts — beach or pool weather" },
-    { min: 92, text: "Light tank top and shorts" },
-    { min: 88, text: "T-shirt and shorts" },
-    { min: 84, text: "Short-sleeve shirt, light cottons" },
-    { min: 80, text: "T-shirt and chinos" },
-    { min: 76, text: "Light shirt or tee, comfy jeans" },
-    { min: 72, text: "T-shirt with thin overshirt" },
-    { min: 68, text: "T-shirt or light long-sleeve, comfy pants" },
-    { min: 64, text: "Long-sleeve top, light sweater" },
-    { min: 60, text: "Sweater or fleece recommended" },
-    { min: 56, text: "Sweater weather" },
-    { min: 52, text: "Light coat and long pants" },
-    { min: 48, text: "Medium coat or thick hoodie" },
-    { min: 44, text: "Coat and scarf recommended" },
-    { min: 40, text: "Heavy coat weather" },
-    { min: 36, text: "Winter jacket and gloves" },
-    { min: 32, text: "Puffer jacket, hat, and scarf" },
-    { min: 28, text: "Bundle up — thermal layers needed" },
-    { min: 20, text: "Freezing — thermal layers essential" },
-    { min: 10, text: "Extreme cold — stay indoors if possible" },
-    { min: -10, text: "Subzero danger — full winter gear required" },
+    { min: 96, text: "Tank top and athletic shorts, perfect beach or pool weather." },
+    { min: 92, text: "Light tank top and shorts." },
+    { min: 88, text: "T-shirt and shorts." },
+    { min: 84, text: "Short-sleeve shirt and light cottons." },
+    { min: 80, text: "T-shirt and chinos." },
+    { min: 76, text: "Light shirt or tee with comfy jeans." },
+    { min: 72, text: "T-shirt with a thin overshirt." },
+    { min: 68, text: "T-shirt or light long-sleeve with comfy pants." },
+    { min: 64, text: "Long-sleeve top, light sweater." },
+    { min: 60, text: "Sweater or fleece recommended." },
+    { min: 56, text: "Classic sweater weather." },
+    { min: 52, text: "Light coat and long pants." },
+    { min: 48, text: "Medium coat or thick hoodie." },
+    { min: 44, text: "Coat and scarf recommended." },
+    { min: 40, text: "Heavy coat weather." },
+    { min: 36, text: "Winter jacket and gloves." },
+    { min: 32, text: "Puffer jacket, hat, and scarf." },
+    { min: 28, text: "Bundle up, thermal layers needed." },
+    { min: 20, text: "Freezing, thermal layers essential." },
+    { min: 10, text: "Extreme cold, stay indoors if possible." },
+    { min: -10, text: "Subzero danger, full winter gear required." },
   ];
 
   for (const o of outfits) {
     if (temp >= o.min) return o.text;
   }
-
   return "Bundle up — it's freezing outside!";
 }
-
 
 // ------------------ Quotes ------------------
 let quotes = [];
@@ -199,14 +207,13 @@ async function loadQuotes() {
 
   rotateQuote();
 
-  // Enable refresh button once quotes are ready
   const refresh = $("quoteRefresh");
   if (refresh) {
     refresh.disabled = false;
     refresh.addEventListener("click", () => {
       if (quoteBusy) return;
       refresh.classList.add("spinning");
-      rotateQuote(true); // force a different quote
+      rotateQuote(true);
       setTimeout(() => refresh.classList.remove("spinning"), 650);
     });
   }
@@ -214,25 +221,20 @@ async function loadQuotes() {
 
 function rotateQuote(force = false) {
   if (!quotes.length || quoteBusy) return;
-  
+
   const qt = $("quoteText");
   const qa = $("quoteAuthor");
   const region = $("quoteRegion");
-  
-  // Check if elements exist before proceeding
   if (!qt || !qa) return;
-  
+
   quoteBusy = true;
 
   let nextIndex;
-  
   if (force && quotes.length > 1) {
-    // When forced, guarantee a different quote
     do {
       nextIndex = Math.floor(Math.random() * quotes.length);
     } while (nextIndex === quoteIndex);
   } else {
-    // Normal rotation can be same or different
     nextIndex = Math.floor(Math.random() * quotes.length);
   }
 
@@ -241,25 +243,19 @@ function rotateQuote(force = false) {
   const { text, author } = quotes[quoteIndex];
   const FADE_MS = 600;
 
-  // Start fade out
   qt.classList.add("fade");
   qa.classList.add("fade");
 
   setTimeout(() => {
-    // Update content
     qt.textContent = `"${text}"`;
     qa.textContent = `— ${author || "Unknown"}`;
-
-    // Fade back in
     qt.classList.remove("fade");
     qa.classList.remove("fade");
 
-    // Update aria-live region if present
     if (region && region.getAttribute("aria-live")) {
       region.setAttribute("data-last-quote", `${text} ${author || ""}`);
     }
-    
-    // Reset busy flag AFTER fade completes
+
     quoteBusy = false;
   }, FADE_MS);
 }
@@ -272,9 +268,9 @@ async function loadPrices() {
     prices = payload.prices || [];
   } catch {
     prices = [
-      { item: "Eggs (1 dozen)", price: 3.99, change: 0.10, direction: "up" },
+      { item: "Eggs (1 dozen)", price: 3.99, change: 0.1, direction: "up" },
       { item: "Milk (1 gal)", price: 4.29, change: -0.05, direction: "down" },
-      { item: "Bread (1 lb)", price: 2.49, change: 0.00, direction: "flat" },
+      { item: "Bread (1 lb)", price: 2.49, change: 0.0, direction: "flat" },
     ];
   }
 
@@ -292,9 +288,7 @@ async function loadPrices() {
   };
 
   const html = prices.map(makePill).join("");
-  // duplicate content for seamless scroll
-  track.innerHTML = html + html;
-
+  track.innerHTML = html + html; // duplicate for seamless scroll
 }
 
 // ------------------ Ticker Interactivity (drag-scroll) ------------------
@@ -305,7 +299,6 @@ function enableTickerDrag() {
   const container = track.parentElement;
   if (!container) return;
 
-  // Ensure proper scroll container class (matches CSS)
   container.classList.add("ticker-container");
   container.style.overflowX = "auto";
   container.style.scrollBehavior = "smooth";
@@ -314,13 +307,12 @@ function enableTickerDrag() {
   let startX;
   let scrollLeft;
 
-  // Mouse events
   container.addEventListener("mousedown", (e) => {
     isDown = true;
     startX = e.pageX - container.offsetLeft;
     scrollLeft = container.scrollLeft;
     container.classList.add("active");
-    track.style.animationPlayState = "paused"; // pause animation
+    track.style.animationPlayState = "paused";
   });
 
   container.addEventListener("mouseleave", () => {
@@ -339,11 +331,11 @@ function enableTickerDrag() {
     if (!isDown) return;
     e.preventDefault();
     const x = e.pageX - container.offsetLeft;
-    const walk = (x - startX) * 1.5; // drag sensitivity
+    const walk = (x - startX) * 1.5;
     container.scrollLeft = scrollLeft - walk;
   });
 
-  // Touch events for mobile support
+  // Touch events
   let touchStartX = 0;
   let touchScrollLeft = 0;
 
@@ -378,7 +370,9 @@ async function updateSystem() {
       }
       if (txt) txt.textContent = `${level}%`;
     }
-  } catch {}
+  } catch {
+    // ignore battery errors
+  }
 
   try {
     if (performance && performance.memory) {
@@ -393,7 +387,9 @@ async function updateSystem() {
       }
       if (txt) txt.textContent = `${usedMB}MB`;
     }
-  } catch {}
+  } catch {
+    // ignore memory errors
+  }
 
   const netBar = $("networkBar");
   const netTxt = $("networkText");
@@ -470,11 +466,13 @@ async function loadSystemFromServer() {
     if (data.cpu) cpuText.push(data.cpu);
     if (typeof data.cpu_cores === "number") cpuText.push(`${data.cpu_cores} cores`);
     document.getElementById("internalCpu")?.replaceChildren(
-      document.createTextNode(cpuText.join(" · ") || "—")
+      document.createTextNode(cpuText.join(" · ") || "—"),
     );
 
     const up = typeof data.uptime_seconds === "number" ? fmtUptime(data.uptime_seconds) : "—";
-    document.getElementById("internalUptime")?.replaceChildren(document.createTextNode(up));
+    document.getElementById("internalUptime")?.replaceChildren(
+      document.createTextNode(up),
+    );
 
     const mem = data.memory || {};
     const memPct = Math.max(0, Math.min(100, Number(mem.percent) || 0));
@@ -483,8 +481,12 @@ async function loadSystemFromServer() {
       memBar.style.width = `${memPct}%`;
       memBar.className = `fill ${memPct < 60 ? "good" : memPct < 80 ? "warning" : "danger"}`;
     }
-    const memText = `${fmtBytesMB(mem.used_mb)} / ${fmtBytesMB(mem.total_mb)} (${memPct.toFixed(0)}%)`;
-    document.getElementById("internalMemText")?.replaceChildren(document.createTextNode(memText));
+    const memText = `${fmtBytesMB(mem.used_mb)} / ${fmtBytesMB(mem.total_mb)} (${memPct.toFixed(
+      0,
+    )}%)`;
+    document.getElementById("internalMemText")?.replaceChildren(
+      document.createTextNode(memText),
+    );
 
     const sto = data.storage || {};
     const stoPct = Math.max(0, Math.min(100, Number(sto.percent) || 0));
@@ -493,8 +495,12 @@ async function loadSystemFromServer() {
       stoBar.style.width = `${stoPct}%`;
       stoBar.className = `fill ${stoPct < 70 ? "good" : stoPct < 90 ? "warning" : "danger"}`;
     }
-    const stoText = `${fmtBytesGB(sto.used_gb)} / ${fmtBytesGB(sto.total_gb)} (${stoPct.toFixed(0)}%)`;
-    document.getElementById("internalDiskText")?.replaceChildren(document.createTextNode(stoText));
+    const stoText = `${fmtBytesGB(sto.used_gb)} / ${fmtBytesGB(sto.total_gb)} (${stoPct.toFixed(
+      0,
+    )}%)`;
+    document.getElementById("internalDiskText")?.replaceChildren(
+      document.createTextNode(stoText),
+    );
 
     const net = data.network || {};
     const online = net.online ? "Online" : "Offline";
@@ -503,14 +509,16 @@ async function loadSystemFromServer() {
 
     const latencyVal = Number.isFinite(net.rtt_ms)
       ? Math.round(net.rtt_ms)
-      : (Number.isFinite(net.latency_ms) ? Math.round(net.latency_ms) : null);
+      : Number.isFinite(net.latency_ms)
+        ? Math.round(net.latency_ms)
+        : null;
 
     const down = Number.isFinite(net.downlink_mbps) ? ` · ${net.downlink_mbps.toFixed(1)} Mbps` : "";
-    const eff  = net.effective_type ? ` · ${net.effective_type}` : "";
-    const lat  = (latencyVal !== null) ? ` · ${latencyVal} ms` : "";
+    const eff = net.effective_type ? ` · ${net.effective_type}` : "";
+    const lat = latencyVal !== null ? ` · ${latencyVal} ms` : "";
 
     document.getElementById("internalNet")?.replaceChildren(
-      document.createTextNode(`${online}${iface}${eff}${down}${lat}`)
+      document.createTextNode(`${online}${iface}${eff}${down}${lat}`),
     );
   } catch (e) {
     console.warn("Failed to load /api/system", e);
@@ -520,31 +528,34 @@ async function loadSystemFromServer() {
 // ------------------ Network Devices ------------------
 function getDeviceIcon(deviceType) {
   const iconMap = {
-    'Router/AP': 'fa-wifi',
-    'Mobile Device': 'fa-mobile-screen',
-    'Computer': 'fa-laptop',
-    'Smart Device': 'fa-lightbulb',
-    'Gaming Console': 'fa-gamepad',
-    'Printer': 'fa-print',
-    'Unknown': 'fa-question-circle'
+    "Router/AP": "fa-wifi",
+    "Mobile Device": "fa-mobile-screen",
+    Computer: "fa-laptop",
+    "Smart Device": "fa-lightbulb",
+    "Gaming Console": "fa-gamepad",
+    Printer: "fa-print",
+    Unknown: "fa-question-circle",
   };
-  return iconMap[deviceType] || 'fa-question-circle';
+  return iconMap[deviceType] || "fa-question-circle";
 }
 
 async function loadNetworkDevices() {
-  const grid = document.getElementById('devicesGrid');
+  const grid = document.getElementById("devicesGrid");
   if (!grid) return;
 
   try {
-    const data = await fetchJSON('/api/network/devices');
+    const data = await fetchJSON("/api/network/devices");
     const devices = data.devices || [];
 
     if (devices.length === 0) {
-      grid.innerHTML = '<p class="subtle" style="text-align:center;">No devices found in ARP cache. Try accessing other devices on your network first.</p>';
+      grid.innerHTML =
+        '<p class="subtle" style="text-align:center;">No devices found in ARP cache. Try accessing other devices on your network first.</p>';
       return;
     }
 
-    grid.innerHTML = devices.map(device => `
+    grid.innerHTML = devices
+      .map(
+        (device) => `
       <div class="device-card">
         <div class="device-header">
           <i class="fas ${getDeviceIcon(device.device_type)} device-icon" aria-hidden="true"></i>
@@ -562,20 +573,76 @@ async function loadNetworkDevices() {
             <span class="label">Vendor</span>
             <span class="value">${device.vendor}</span>
           </div>
-          ${device.interface !== 'N/A' ? `
+          ${
+            device.interface !== "N/A"
+              ? `
           <div class="device-detail">
             <span class="label">Interface</span>
             <span class="value">${device.interface}</span>
           </div>
-          ` : ''}
+          `
+              : ""
+          }
         </div>
       </div>
-    `).join('');
-
+    `,
+      )
+      .join("");
   } catch (error) {
-    console.error('Error loading network devices:', error);
-    grid.innerHTML = '<p class="subtle" style="text-align:center;">Failed to load network devices.</p>';
+    console.error("Error loading network devices:", error);
+    grid.innerHTML =
+      '<p class="subtle" style="text-align:center;">Failed to load network devices.</p>';
   }
+}
+
+// ----------------------
+// Location Change Modal
+// ----------------------
+function initLocationModal() {
+  const modal = document.getElementById("locationModal");
+  const openBtn = document.getElementById("changeLocationBtn");
+  const closeBtn = document.getElementById("closeLocationModal");
+  const saveBtn = document.getElementById("saveLocationBtn");
+  const input = document.getElementById("locationInput");
+
+  if (!modal || !openBtn || !closeBtn || !saveBtn || !input) return;
+
+  const close = () => modal.classList.add("hidden");
+
+  openBtn.onclick = () => {
+    modal.classList.remove("hidden");
+    input.value = "";
+    input.focus();
+  };
+
+  closeBtn.onclick = close;
+
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) close();
+  });
+
+  saveBtn.onclick = async () => {
+    const loc = input.value.trim();
+    if (!loc) return;
+
+    try {
+      await fetch("/api/settings/update_location", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ location: loc }),
+      });
+
+      close();
+      location.reload();
+    } catch (e) {
+      console.error("Location update failed", e);
+    }
+  };
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") saveBtn.click();
+    if (e.key === "Escape") close();
+  });
 }
 
 // ------------------ Init + lifecycle ------------------
@@ -588,7 +655,7 @@ function startTimers() {
   timers.push(setInterval(updateSystem, 30 * 1000));
   timers.push(setInterval(loadSystemFromServer, 60 * 1000));
   timers.push(setInterval(measureLatency, 30 * 1000));
-  timers.push(setInterval(loadNetworkDevices, 2 * 60 * 1000)); // Refresh every 2 minutes
+  timers.push(setInterval(loadNetworkDevices, 2 * 60 * 1000));
 }
 
 function clearTimers() {
@@ -597,23 +664,18 @@ function clearTimers() {
 }
 
 function init() {
-  // Init theme system
   window.NetHealthTheme?.initThemeUI();
 
-  // First paints
   updateClock();
   loadWeather();
-  loadQuotes();        // also wires the refresh button
+  loadQuotes();
   loadPrices();
   updateSystem();
   loadSystemFromServer();
   measureLatency();
   loadNetworkDevices();
 
-  // Timers
   startTimers();
-
-  // enable drag-scroll behavior for ticker
   enableTickerDrag();
 }
 
@@ -631,4 +693,9 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
-document.addEventListener("DOMContentLoaded", init);
+// Single bootstrap for everything
+document.addEventListener("DOMContentLoaded", () => {
+  initThemeLogoSwap();
+  initLocationModal();
+  init();
+});

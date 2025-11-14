@@ -1,3 +1,4 @@
+# app.py
 import argparse
 from flask import Flask, render_template
 from api.routes import api_bp

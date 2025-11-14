@@ -93,5 +93,9 @@ scripts/dev_run.sh
 
 # Env files
 .env
+
 # Local archives/backups
-Archive/
+Archive/NetHealth2025.app/
+
+# macOS app bundle (do NOT commit)
+NetHealth2025.app/

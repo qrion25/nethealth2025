@@ -57,6 +57,12 @@
           <button type="button" class="theme-chip" data-theme-chip="terminal">Terminal</button>
         </div>
 
+        <!-- Change Location Button -->
+        <button id="changeLocationBtn" class="icon-btn" title="Change Location">
+          <i class="fas fa-location-dot"></i>
+      </button>
+
+        <!-- Light / Dark Theme Toggle Button -->
         <button id="themeToggle" class="theme-toggle" aria-label="Toggle dark mode">
           <i class="fas fa-moon" aria-hidden="true"></i>
           <span>Dark</span>
@@ -266,6 +272,19 @@
   <!-- JS (themes first without defer, then dashboard) -->
   <script src="{{ url_for('static', filename='js/themes.js') }}"></script>
   <script defer src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+
+  <!-- Location Modal -->
+<div id="locationModal" class="modal hidden">
+  <div class="modal-content">
+    <button class="modal-close" id="closeLocationModal">&times;</button>
+    <h2>Set Location</h2>
+    <p class="subtle">Enter a city or ZIP. This will update your local weather data.</p>
+
+    <input id="locationInput" type="text" placeholder="Brooklyn or 11201" />
+
+    <button id="saveLocationBtn" class="primary-btn">Save</button>
+  </div>
+</div>
 
 </body>
 </html>

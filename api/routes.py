@@ -1,15 +1,20 @@
 # api/routes.py
 from __future__ import annotations
-from flask import Blueprint, jsonify
+
+import json
+import csv
+import os
 from pathlib import Path
-import json, csv, os
 from collections import defaultdict
 from datetime import datetime
+
+from flask import Blueprint, jsonify, request
 
 try:
     import requests
 except ImportError:
     requests = None
+
 
 bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -18,19 +23,19 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
 QUOTES_PATH = DATA_DIR / "quotes.json"
 PRICES_PATH = DATA_DIR / "prices.csv"
+ENV_PATH = ROOT / ".env"
 
 
-# --- Helpers ---
+# -------------------------------
+# Quotes Loader
+# -------------------------------
 def load_quotes() -> list[dict]:
-    """
-    Reads data/quotes.json if present; falls back to a small built-in list.
-    """
     if QUOTES_PATH.exists():
         try:
             return json.loads(QUOTES_PATH.read_text(encoding="utf-8"))
         except Exception:
             pass
-    # fallback
+
     return [
         {"text": "The best way to predict the future is to create it.", "author": "Peter Drucker"},
         {"text": "Innovation distinguishes between a leader and a follower.", "author": "Steve Jobs"},
@@ -40,14 +45,10 @@ def load_quotes() -> list[dict]:
     ]
 
 
+# -------------------------------
+# Prices Loader
+# -------------------------------
 def load_prices_latest_with_change() -> list[dict]:
-    """
-    Reads data/prices.csv and returns latest price per item,
-    plus delta vs previous entry for that item.
-
-    CSV columns (required):
-      date,item,price
-    """
     if not PRICES_PATH.exists():
         return []
 
@@ -64,16 +65,16 @@ def load_prices_latest_with_change() -> list[dict]:
                 continue
             rows.append({"dt": dt, "item": item, "price": price})
 
-    # group by item, sort by date, compute change vs previous
     by_item = defaultdict(list)
     for r in rows:
         by_item[r["item"]].append(r)
 
     result = []
     for item, lst in by_item.items():
-        lst.sort(key=lambda x: (x["dt"] is None, x["dt"]))  # safeguard
+        lst.sort(key=lambda x: (x["dt"] is None, x["dt"]))
         if not lst:
             continue
+
         latest = lst[-1]["price"]
         prev = lst[-2]["price"] if len(lst) >= 2 else None
 
@@ -96,71 +97,120 @@ def load_prices_latest_with_change() -> list[dict]:
             "direction": direction
         })
 
-    # sort for stable UI (alphabetical)
     result.sort(key=lambda x: x["item"].lower())
     return result
 
 
-# --- Endpoints ---
+# -------------------------------
+# Update Weather Location
+# -------------------------------
+@bp.post("/settings/update_location")
+def update_location():
+    payload = request.get_json(silent=True) or {}
+    new_loc = payload.get("location", "").strip()
+
+    if not new_loc:
+        return jsonify({"error": "Invalid location"}), 400
+
+    # Read existing .env if present
+    lines = []
+    if ENV_PATH.exists():
+        lines = ENV_PATH.read_text(encoding="utf-8").splitlines()
+
+    updated = False
+    new_lines = []
+
+    for line in lines:
+        if line.startswith("WEATHER_LOCATION="):
+            new_lines.append(f"WEATHER_LOCATION={new_loc}")
+            updated = True
+        else:
+            new_lines.append(line)
+
+    # If key not found, append it
+    if not updated:
+        new_lines.append(f"WEATHER_LOCATION={new_loc}")
+
+    # Write back cleanly
+    ENV_PATH.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
+
+    return jsonify({"ok": True})
+
+
+# -------------------------------
+# Health
+# -------------------------------
 @bp.get("/health")
 def health():
     return jsonify({"ok": True})
 
 
+# -------------------------------
+# Version
+# -------------------------------
 @bp.get("/version")
 def version():
     return jsonify({"name": "NetHealth2025", "version": "0.1.0"})
 
 
+# -------------------------------
+# Quotes API
+# -------------------------------
 @bp.get("/quotes")
 def quotes():
     return jsonify({"quotes": load_quotes()})
 
 
+# -------------------------------
+# Prices API
+# -------------------------------
 @bp.get("/prices")
 def prices():
     return jsonify({"prices": load_prices_latest_with_change()})
 
 
+# -------------------------------
+# Weather API
+# -------------------------------
 @bp.get("/weather")
 def weather():
     """
     Returns current weather data from WeatherAPI.com.
-    Falls back to stub data if API key not configured or request fails.
+    Reloads .env on each request so updates take effect immediately.
     """
+    # Re-load new .env values when user updates location
+    from dotenv import load_dotenv
+    load_dotenv(override=True)
+
     if not requests:
         return jsonify({
             "temperature_f": 72,
             "location": "New York",
             "conditions": "Install requests library"
         })
-    
-    api_key = os.environ.get('WEATHERAPI_KEY')
-    
+
+    api_key = os.environ.get("WEATHERAPI_KEY")
+    location = os.environ.get("WEATHER_LOCATION", "auto:ip")
+
     if not api_key:
-        # Fallback to stub data if no API key
         return jsonify({
             "temperature_f": 72,
             "location": "New York",
             "conditions": "Configure WEATHERAPI_KEY"
         })
-    
+
     try:
-        # Auto-detect location by IP, or specify location manually
-        # Use 'auto:ip' for automatic IP-based location
-        location = os.environ.get('WEATHER_LOCATION', 'auto:ip')
-        
         url = f"http://api.weatherapi.com/v1/current.json?key={api_key}&q={location}"
-        
         response = requests.get(url, timeout=5)
         response.raise_for_status()
         data = response.json()
-        
+
         return jsonify({
-            "temperature_f": round(data['current']['temp_f']),
+            "temperature_f": round(data["current"]["temp_f"]),
             "location": f"{data['location']['name']}, {data['location']['region']}",
-            "conditions": data['current']['condition']['text']
+            "conditions": data["current"]["condition"]["text"]
         })
+
     except Exception as e:
         print(f"Weather API error: {e}")
         return jsonify({
@@ -169,41 +219,31 @@ def weather():
             "conditions": "API Error"
         })
 
-
+# -------------------------------
+# System Info
+# -------------------------------
 @bp.get("/system")
 def api_system():
-    """
-    Returns system information collected server-side.
-    """
     from services.system_info import get_system_info
     return jsonify(get_system_info())
 
 
+# -------------------------------
+# Network Devices
+# -------------------------------
 @bp.get("/network/devices")
 def network_devices():
-    """
-    Returns list of devices discovered from ARP cache.
-    """
     try:
         from services.network_devices import get_network_devices, guess_device_type
-        
+
         devices = get_network_devices()
-        
-        # Enhance with device type guesses
         for device in devices:
-            device['device_type'] = guess_device_type(device['vendor'], device['mac'])
-        
-        return jsonify({
-            "devices": devices,
-            "count": len(devices)
-        })
+            device["device_type"] = guess_device_type(device["vendor"], device["mac"])
+
+        return jsonify({"devices": devices, "count": len(devices)})
     except Exception as e:
-        return jsonify({
-            "devices": [],
-            "count": 0,
-            "error": str(e)
-        }), 500
+        return jsonify({"devices": [], "count": 0, "error": str(e)}), 500
 
 
-# Alias so app.py can import consistently
+# Alias so app.py can import easily
 api_bp = bp
