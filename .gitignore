@@ -97,5 +97,26 @@ scripts/dev_run.sh
 # Local archives/backups
 Archive/NetHealth2025.app/
 
-# macOS app bundle (do NOT commit)
+# --- macOS App Bundles (custom launchers) ---
+# Ignore both full application bundles
 NetHealth2025.app/
+Shutdown NetHealth2025.app/
+
+# Ignore compiled macOS binaries inside .app bundles
+NetHealth2025.app/Contents/MacOS/NetHealth2025
+Shutdown NetHealth2025.app/Contents/MacOS/Shutdown
+
+# Ignore launcher scripts inside macOS apps
+NetHealth2025.app/Contents/Resources/launch.sh
+Shutdown NetHealth2025.app/Contents/Resources/shutdown.sh
+
+# Ignore icons bundled with apps (optional — recommended)
+NetHealth2025.app/Contents/Resources/*.icns
+Shutdown NetHealth2025.app/Contents/Resources/*.icns
+
+# Ignore any accidental ICNS icons dropped in root
+*.icns
+
+# Ignore launcher source code if you don't want it versioned
+launcher.c
+shutdown_launcher.c
