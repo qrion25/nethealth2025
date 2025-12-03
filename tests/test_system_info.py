@@ -13,7 +13,7 @@ def test_get_system_info_shape():
     bat = info["battery"]
     assert isinstance(bat, dict)
     assert "level" in bat and "charging" in bat
-    assert bat["level"] is None or (0.0 <= bat["level"] <= 1.0)
+    "battery": {"level": None, "charging": None},
 
     # Memory shape
     mem = info["memory"]

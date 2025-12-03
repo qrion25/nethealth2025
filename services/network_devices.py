@@ -35,7 +35,14 @@ def load_oui_database() -> Dict[str, str]:
     return oui_map
 
 
-OUI_DATABASE = load_oui_database()
+# OUI database cache
+_oui_cache = None
+
+def get_oui_database():
+    global _oui_cache
+    if _oui_cache is None:
+        _oui_cache = load_oui_database()
+    return _oui_cache
 
 
 def lookup_vendor(mac_address: str) -> str:
@@ -49,7 +56,7 @@ def lookup_vendor(mac_address: str) -> str:
         return "Unknown Vendor"
 
     prefix = ':'.join(part.zfill(2) for part in parts[:3])
-    return OUI_DATABASE.get(prefix, "Unknown Vendor")
+    return get_oui_database().get(prefix, "Unknown Vendor")
 
 
 def _should_skip_device(ip: str, mac: str) -> bool:
@@ -114,7 +121,7 @@ def parse_arp_cache_macos() -> List[Dict[str, str]]:
     """Parse arp -a output on macOS."""
     devices = []
     try:
-        result = subprocess.run(['arp', '-a'], capture_output=True, text=True, timeout=15)
+        result = subprocess.run(['arp', '-a'], capture_output=True, text=True, timeout=5)
         pattern = r'\(([0-9.]+)\)\s+at\s+([0-9a-f:]+)\s+on\s+(\S+)'
         for line in result.stdout.splitlines():
             if '(incomplete)' in line.lower():

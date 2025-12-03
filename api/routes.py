@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import csv
 import os
+import logging
 from pathlib import Path
 from collections import defaultdict
 from datetime import datetime
@@ -34,7 +35,7 @@ def load_quotes() -> list[dict]:
         try:
             return json.loads(QUOTES_PATH.read_text(encoding="utf-8"))
         except Exception:
-            pass
+            logging.warning("Failed to load quotes", exc_info=True)
 
     return [
         {"text": "The best way to predict the future is to create it.", "author": "Peter Drucker"},
@@ -100,6 +101,100 @@ def load_prices_latest_with_change() -> list[dict]:
     result.sort(key=lambda x: x["item"].lower())
     return result
 
+# -------------------------------
+# Update Weather API Key
+# -------------------------------
+@bp.post("/settings/update_api_key")
+def update_api_key():
+    payload = request.get_json(silent=True) or {}
+    api_key = payload.get("api_key", "").strip()
+    
+    # Basic validation
+    if not api_key:
+        return jsonify({"error": "API key cannot be empty"}), 400
+    if len(api_key) < 20 or len(api_key) > 40:
+        return jsonify({"error": "Invalid API key format"}), 400
+    if "\n" in api_key or "=" in api_key or " " in api_key:
+        return jsonify({"error": "Invalid characters in API key"}), 400
+
+    # Read existing .env if present
+    lines = []
+    if ENV_PATH.exists():
+        lines = ENV_PATH.read_text(encoding="utf-8").splitlines()
+
+    updated = False
+    new_lines = []
+
+    for line in lines:
+        if line.startswith("WEATHERAPI_KEY="):
+            new_lines.append(f"WEATHERAPI_KEY={api_key}")
+            updated = True
+        else:
+            new_lines.append(line)
+
+    # If key not found, append it
+    if not updated:
+        new_lines.append(f"WEATHERAPI_KEY={api_key}")
+
+    # Write back cleanly
+    ENV_PATH.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
+
+    return jsonify({"ok": True})
+
+
+# -------------------------------
+# Check API Key Status
+# -------------------------------
+@bp.get("/settings/api_status")
+def api_status():
+    """Check if weather API key is configured and working."""
+    from dotenv import load_dotenv
+    load_dotenv(override=True)
+    
+    api_key = os.environ.get("WEATHERAPI_KEY", "").strip()
+    
+    if not api_key:
+        return jsonify({
+            "configured": False,
+            "valid": False,
+            "message": "No API key configured"
+        })
+    
+    # Test the API key with a simple request
+    if requests:
+        try:
+            url = f"https://api.weatherapi.com/v1/current.json?key={api_key}&q=London"
+            response = requests.get(url, timeout=5)
+            if response.status_code == 200:
+                return jsonify({
+                    "configured": True,
+                    "valid": True,
+                    "message": "API key is valid"
+                })
+            elif response.status_code == 401:
+                return jsonify({
+                    "configured": True,
+                    "valid": False,
+                    "message": "API key is invalid"
+                })
+            else:
+                return jsonify({
+                    "configured": True,
+                    "valid": False,
+                    "message": f"API error: {response.status_code}"
+                })
+        except Exception as e:
+            return jsonify({
+                "configured": True,
+                "valid": False,
+                "message": f"Connection error: {str(e)}"
+            })
+    
+    return jsonify({
+        "configured": True,
+        "valid": None,
+        "message": "Cannot verify (requests library not available)"
+    })
 
 # -------------------------------
 # Update Weather Location
@@ -108,9 +203,8 @@ def load_prices_latest_with_change() -> list[dict]:
 def update_location():
     payload = request.get_json(silent=True) or {}
     new_loc = payload.get("location", "").strip()
-
-    if not new_loc:
-        return jsonify({"error": "Invalid location"}), 400
+    if "\n" in new_loc or "=" in new_loc:
+        return jsonify({"error": "Invalid characters in location"}), 400
 
     # Read existing .env if present
     lines = []
@@ -150,7 +244,7 @@ def health():
 # -------------------------------
 @bp.get("/version")
 def version():
-    return jsonify({"name": "NetHealth2025", "version": "0.1.0"})
+    return jsonify({"name": "NetHealth2025", "version": "4.3.0"})
 
 
 # -------------------------------
@@ -170,23 +264,27 @@ def prices():
 
 
 # -------------------------------
-# Weather API
+# Weather API (with forecast)
 # -------------------------------
 @bp.get("/weather")
 def weather():
     """
-    Returns current weather data from WeatherAPI.com.
+    Returns current weather + 7-day forecast from WeatherAPI.com.
     Reloads .env on each request so updates take effect immediately.
     """
-    # Re-load new .env values when user updates location
     from dotenv import load_dotenv
     load_dotenv(override=True)
 
     if not requests:
         return jsonify({
             "temperature_f": 72,
+            "feels_like_f": 70,
+            "humidity": 50,
+            "wind_mph": 5,
             "location": "New York",
-            "conditions": "Install requests library"
+            "conditions": "Install requests library",
+            "hourly": [],
+            "daily": []
         })
 
     api_key = os.environ.get("WEATHERAPI_KEY")
@@ -195,28 +293,78 @@ def weather():
     if not api_key:
         return jsonify({
             "temperature_f": 72,
+            "feels_like_f": 70,
+            "humidity": 50,
+            "wind_mph": 5,
             "location": "New York",
-            "conditions": "Configure WEATHERAPI_KEY"
+            "conditions": "Configure WEATHERAPI_KEY",
+            "hourly": [],
+            "daily": []
         })
 
     try:
-        url = f"http://api.weatherapi.com/v1/current.json?key={api_key}&q={location}"
-        response = requests.get(url, timeout=5)
+        url = f"https://api.weatherapi.com/v1/forecast.json?key={api_key}&q={location}&days=7&aqi=no&alerts=no"
+        response = requests.get(url, timeout=8)
         response.raise_for_status()
         data = response.json()
 
+        current = data.get("current", {})
+        location_data = data.get("location", {})
+        forecast_days = data.get("forecast", {}).get("forecastday", [])
+
+        # Build hourly forecast (next 5 hours from now)
+        hourly = []
+        from datetime import datetime as dt
+        now_epoch = current.get("last_updated_epoch", 0)
+        
+        for day in forecast_days[:2]:  # Today and tomorrow
+            for hour in day.get("hour", []):
+                hour_epoch = hour.get("time_epoch", 0)
+                if hour_epoch > now_epoch and len(hourly) < 5:
+                    hourly.append({
+                        "time": hour.get("time", "")[-5:],  # "HH:MM"
+                        "temp_f": round(hour.get("temp_f", 0)),
+                        "condition": hour.get("condition", {}).get("text", ""),
+                        "code": hour.get("condition", {}).get("code", 1000),
+                        "chance_of_rain": hour.get("chance_of_rain", 0)
+                    })
+
+        # Build daily forecast (7 days)
+        daily = []
+        for day in forecast_days:
+            day_data = day.get("day", {})
+            daily.append({
+                "date": day.get("date", ""),
+                "high_f": round(day_data.get("maxtemp_f", 0)),
+                "low_f": round(day_data.get("mintemp_f", 0)),
+                "condition": day_data.get("condition", {}).get("text", ""),
+                "code": day_data.get("condition", {}).get("code", 1000),
+                "chance_of_rain": day_data.get("daily_chance_of_rain", 0)
+            })
+
         return jsonify({
-            "temperature_f": round(data["current"]["temp_f"]),
-            "location": f"{data['location']['name']}, {data['location']['region']}",
-            "conditions": data["current"]["condition"]["text"]
+            "temperature_f": round(current.get("temp_f", 0)),
+            "feels_like_f": round(current.get("feelslike_f", 0)),
+            "humidity": current.get("humidity", 0),
+            "wind_mph": round(current.get("wind_mph", 0)),
+            "location": f"{location_data.get('name', '')}, {location_data.get('region', '')}",
+            "conditions": current.get("condition", {}).get("text", ""),
+            "code": current.get("condition", {}).get("code", 1000),
+            "hourly": hourly,
+            "daily": daily
         })
 
     except Exception as e:
-        print(f"Weather API error: {e}")
+        logging.error(f"Weather API error: {e}")
         return jsonify({
             "temperature_f": "--",
+            "feels_like_f": "--",
+            "humidity": "--",
+            "wind_mph": "--",
             "location": "Unavailable",
-            "conditions": "API Error"
+            "conditions": "API Error",
+            "hourly": [],
+            "daily": []
         })
 
 # -------------------------------

@@ -87,14 +87,6 @@ body.theme-dark .theme-toggle {
   color: var(--fg);    /* ensures button + icon are visible in dark mode */
 }
 
-/* Optional split-flap vibe for cards (rounded = 24 like your Figma) */
-.card {
-  border-radius: var(--radius-card, 16px);
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  color: var(--fg);
-}
-
 /* Utility chips */
 .theme-chip,
 .font-chip {

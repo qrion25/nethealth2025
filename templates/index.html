@@ -22,7 +22,7 @@
   <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@300;400;600;700&display=swap" />
   
-        <link rel="stylesheet"
+  <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" 
       crossorigin="anonymous" 
       referrerpolicy="no-referrer" />
@@ -36,39 +36,48 @@
   <header class="site-header">
     <div class="header-container">
 
-  <!-- Brand -->
-  <div class="brand-wrapper">
-    <img 
-      src="{{ url_for('static', filename='img/nethealth2025_logo.png') }}"
-      data-light="{{ url_for('static', filename='img/nethealth2025_logo.png') }}"
-      data-dark="{{ url_for('static', filename='img/nethealth2025_logo.png') }}"
-      alt="NetHealth 2025 logo"
-      class="brand-logo theme-logo"
-    />
-    <h1 class="brand">NetHealth <span class="accent">2025</span></h1>
-  </div>
-
-      <!-- Theme controls -->
-      <div class="header-actions">
-        <div class="theme-chips" aria-label="Choose color theme" role="group">
-          <button type="button" class="theme-chip is-active" data-theme-chip="nethealth">NetHealth</button>
-          <button type="button" class="theme-chip" data-theme-chip="sunset">Sunset</button>
-          <button type="button" class="theme-chip" data-theme-chip="forest">Forest</button>
-          <button type="button" class="theme-chip" data-theme-chip="terminal">Terminal</button>
-        </div>
-
-        <!-- Change Location Button -->
-        <button id="changeLocationBtn" class="icon-btn" title="Change Location">
-          <i class="fas fa-location-dot"></i>
-      </button>
-
-        <!-- Light / Dark Theme Toggle Button -->
-        <button id="themeToggle" class="theme-toggle" aria-label="Toggle dark mode">
-          <i class="fas fa-moon" aria-hidden="true"></i>
-          <span>Dark</span>
-        </button>
+      <!-- Brand -->
+      <div class="brand-wrapper">
+        <img 
+          src="{{ url_for('static', filename='img/nethealth2025_logo.png') }}"
+          data-light="{{ url_for('static', filename='img/nethealth2025_logo.png') }}"
+          data-dark="{{ url_for('static', filename='img/nethealth2025_logo.png') }}"
+          alt="NetHealth 2025 logo"
+          class="brand-logo theme-logo"
+        />
+        <h1 class="brand">NetHealth <span class="accent">2025</span></h1>
       </div>
 
+      <!-- Theme controls -->
+        <div class="header-actions">
+          <div class="theme-chips" aria-label="Choose color theme" role="group">
+            <button type="button" class="theme-chip is-active" data-theme-chip="nethealth">NetHealth</button>
+            <button type="button" class="theme-chip" data-theme-chip="sunset">Sunset</button>
+            <button type="button" class="theme-chip" data-theme-chip="forest">Forest</button>
+            <button type="button" class="theme-chip" data-theme-chip="terminal">Terminal</button>
+          </div>
+
+            <!-- Settings Button (API Key) -->
+          <button id="settingsBtn" class="icon-btn" title="Settings">
+            <i class="fas fa-gear"></i>
+          </button>
+
+          <!-- Split-Flap Clock Button -->
+          <a href="{{ url_for('clock') }}" class="icon-btn" title="Split-Flap Clock">
+            <i class="fa-solid fa-clock"></i>
+          </a>
+
+          <!-- Change Location Button -->
+          <button id="changeLocationBtn" class="icon-btn" title="Change Location">
+            <i class="fas fa-location-dot"></i>
+          </button>
+
+          <!-- Light / Dark Theme Toggle Button -->
+          <button id="themeToggle" class="theme-toggle" aria-label="Toggle dark mode">
+            <i class="fas fa-moon" aria-hidden="true"></i>
+            <span>Dark</span>
+          </button>
+        </div>
     </div>
   </header>
 
@@ -80,30 +89,77 @@
       <p class="subtle">Pick a theme, skim some stats, and keep an eye on prices.</p>
     </section>
 
-    <!-- Local Conditions -->
-    <section class="card" aria-labelledby="local-conditions-title">
-      <h2 id="local-conditions-title" class="card-title">
-        <i class="fas fa-cloud-sun card-icon" aria-hidden="true"></i> Local Conditions
-      </h2>
-        <div class="center">
-          <div class="big" id="tempWrapper" aria-live="polite">
-            <span id="tempValue">--°</span>
-            <i id="weatherIcon" class="fas fa-question-circle subtle"></i>
+    <!-- Local Conditions (Flip Card) -->
+    <section class="card weather-flip-card" aria-labelledby="local-conditions-title" tabindex="0" role="button" aria-pressed="false">
+      <div class="flip-card-inner" id="weatherCardInner">
+        
+        <!-- FRONT -->
+        <div class="flip-card-front">
+          <div class="card-header-row">
+            <h2 id="local-conditions-title" class="card-title">
+              <i class="fas fa-cloud-sun card-icon" aria-hidden="true"></i> Local Conditions
+            </h2>
+            <div class="weather-header-actions">
+              <button class="icon-btn" id="weatherRefreshBtn" aria-label="Refresh weather" title="Refresh">
+                <i class="fas fa-rotate-right"></i>
+              </button>
+              <span class="flip-hint subtle"><i class="fas fa-hand-pointer"></i> Tap for details</span>
+            </div>
           </div>
-          <div class="label" id="outfitSuggestion">Temperature</div>
+          
+          <div class="weather-front-grid">
+            <div class="center">
+              <div class="big" id="tempWrapper" aria-live="polite">
+                <span id="tempValue">--°</span>
+                <i id="weatherIcon" class="fas fa-question-circle subtle"></i>
+              </div>
+              <div class="feels-like subtle" id="feelsLike">Feels like --°</div>
+              <div class="label" id="outfitSuggestion">Loading...</div>
+            </div>
+            <div class="center">
+              <div class="big" id="timeValue" aria-live="polite">--:--</div>
+              <div class="label">Local Time</div>
+            </div>
+            <div class="center">
+              <div class="big" id="locationValue">—</div>
+              <div class="label">Location</div>
+            </div>
+            <div class="center">
+              <div class="big" id="conditionValue">—</div>
+              <div class="label">Conditions</div>
+            </div>
+          </div>
         </div>
-        <div class="center">
-          <div class="big" id="timeValue" aria-live="polite">--:--</div>
-          <div class="label">Local Time</div>
+        
+        <!-- BACK -->
+        <div class="flip-card-back">
+          <div class="card-header-row">
+            <h2 class="card-title">
+              <i class="fas fa-calendar-days card-icon" aria-hidden="true"></i> Forecast
+            </h2>
+            <button class="icon-btn" id="flipBackBtn" aria-label="Back to current weather" title="Back">
+              <i class="fas fa-xmark"></i>
+            </button>
+          </div>
+          
+          <!-- Hourly -->
+          <div class="forecast-section">
+            <h3 class="forecast-label">Next 5 Hours</h3>
+            <div class="hourly-forecast" id="hourlyForecast">
+              <div class="forecast-loading"><i class="fas fa-circle-notch fa-spin"></i></div>
+            </div>
+          </div>
+          
+          <!-- Daily -->
+          <div class="forecast-section">
+            <h3 class="forecast-label">Next Few Days</h3>
+            <div class="daily-forecast" id="dailyForecast">
+              <div class="forecast-loading"><i class="fas fa-circle-notch fa-spin"></i></div>
+            </div>
+          </div>
         </div>
-        <div class="center">
-          <div class="big" id="locationValue">—</div>
-          <div class="label">Location</div>
-        </div>
-        <div class="center">
-          <div class="big" id="conditionValue">—</div>
-          <div class="label">Conditions</div>
-        </div>
+        
+      </div>
     </section>
 
     <!-- System Status (client best-effort) -->
@@ -140,7 +196,7 @@
           </div>
           <div class="status-value">
             <div class="bar" aria-hidden="true"><div class="fill good" id="speedBar" style="width:0%"></div></div>
-            <span id="speedText" aria-live="polite">— ms</span>
+            <span id="speedText" aria-live="polite">—</span>
           </div>
         </div>
       </div>
@@ -247,7 +303,7 @@
         <i class="fas fa-network-wired card-icon" aria-hidden="true"></i> Network Devices
       </h2>
       <div class="devices-grid" id="devicesGrid">
-        <p class="subtle" style="text-align:center;">Loading devices...</p>
+        <div class="forecast-loading"><i class="fas fa-circle-notch fa-spin"></i> Loading devices...</div>
       </div>
     </section>
 
@@ -273,15 +329,54 @@
   <script defer src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 
   <!-- Location Modal -->
-<div id="locationModal" class="modal hidden">
-  <div class="modal-content">
-    <button class="modal-close" id="closeLocationModal">&times;</button>
-    <h2>Set Location</h2>
-    <p class="subtle">Enter a city or ZIP. This will update your local weather data.</p>
+  <div id="locationModal" class="modal hidden">
+    <div class="modal-content">
+      <button class="modal-close" id="closeLocationModal">&times;</button>
+      <h2>Set Location</h2>
+      <p class="subtle">Enter a city or ZIP. This will update your local weather data.</p>
 
-    <input id="locationInput" type="text" placeholder="Brooklyn or 11201" />
+      <input id="locationInput" type="text" placeholder="Brooklyn or 11201" />
 
-    <button id="saveLocationBtn" class="primary-btn">Save</button>
+      <button id="saveLocationBtn" class="primary-btn">Save</button>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+<div id="settingsModal" class="modal hidden">
+  <div class="modal-content settings-modal">
+    <button class="modal-close" id="closeSettingsModal">&times;</button>
+    <h2><i class="fas fa-gear" style="color: var(--accent); margin-right: 0.5rem;"></i>Settings</h2>
+    
+    <!-- API Key Section -->
+    <div class="settings-section">
+      <h3 class="settings-label">Weather API Key</h3>
+      <p class="subtle">Get a free API key from <a href="https://www.weatherapi.com/signup.aspx" target="_blank" rel="noopener">WeatherAPI.com</a></p>
+      
+      <div class="api-key-input-wrapper">
+        <input id="apiKeyInput" type="password" placeholder="Paste your API key here" autocomplete="off" />
+        <button id="toggleApiKeyVisibility" class="icon-btn-small" title="Show/Hide">
+          <i class="fas fa-eye"></i>
+        </button>
+      </div>
+      
+      <div class="api-status" id="apiStatus">
+        <i class="fas fa-circle-notch fa-spin"></i> Checking...
+      </div>
+      
+      <button id="saveApiKeyBtn" class="primary-btn">
+        <i class="fas fa-save"></i> Save API Key
+      </button>
+    </div>
+    
+    <!-- Quick Help -->
+    <div class="settings-section settings-help">
+      <h3 class="settings-label">Quick Setup</h3>
+      <ol class="setup-steps">
+        <li>Visit <a href="https://www.weatherapi.com/signup.aspx" target="_blank" rel="noopener">WeatherAPI.com</a> and create a free account</li>
+        <li>Copy your API key from the dashboard</li>
+        <li>Paste it above and click Save</li>
+      </ol>
+    </div>
   </div>
 </div>
 

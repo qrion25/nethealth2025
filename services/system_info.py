@@ -14,13 +14,6 @@ except Exception:  # pragma: no cover
     psutil = None
 
 # ---------- Helpers (updated) ----------
-
-from typing import Optional, Any, Dict
-import socket
-import shutil
-import time
-import platform
-
 def _detect_online(timeout: float = 0.5) -> bool:
     """Quick online check by opening a TCP socket to a well-known host."""
     try:

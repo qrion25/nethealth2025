@@ -64,13 +64,23 @@ function updateClock() {
 }
 
 // ------------------ Weather ------------------
+let weatherData = null; // Store for flip card
+
 async function loadWeather() {
   const iconEl = $("weatherIcon");
   const outfitEl = $("outfitSuggestion");
   const tempEl = $("tempValue");
+  const feelsEl = $("feelsLike");
+
+  // Show loading state for forecast
+  const hourlyContainer = $("hourlyForecast");
+  const dailyContainer = $("dailyForecast");
+  if (hourlyContainer) hourlyContainer.innerHTML = '<div class="forecast-loading"><i class="fas fa-circle-notch fa-spin"></i></div>';
+  if (dailyContainer) dailyContainer.innerHTML = '<div class="forecast-loading"><i class="fas fa-circle-notch fa-spin"></i></div>';
 
   try {
     const data = await fetchJSON("/api/weather");
+    weatherData = data; // Store for flip card rendering
 
     if (!data || typeof data.temperature_f === "undefined") {
       safeSetText("tempValue", "--°");
@@ -79,55 +89,32 @@ async function loadWeather() {
       return;
     }
 
-    const temp = data.current?.temp_f ?? data.temperature_f;
-    const cond = (data.conditions ?? data.condition ?? "").toLowerCase();
+    const temp = data.temperature_f;
+    const feelsLike = data.feels_like_f;
+    const humidity = data.humidity;
+    const windMph = data.wind_mph;
+    const cond = (data.conditions ?? "").toLowerCase();
     const loc = data.location || "—";
-    const conditionCode = data.current?.condition?.code ?? null;
+    const conditionCode = data.code ?? null;
 
     safeSetText("tempValue", `${temp}°`);
     safeSetText("locationValue", loc);
     safeSetText("conditionValue", data.conditions || "—");
+    
+    // Feels like
+    if (feelsEl && feelsLike !== "--") {
+      feelsEl.textContent = `Feels like ${feelsLike}°`;
+    }
 
-    // Weather icon detection (text-based)
-    let iconClass = "fa-question-circle";
-    if (cond.includes("clear") || cond.includes("sun")) iconClass = "fa-sun";
-    else if (cond.includes("cloud") || cond.includes("overcast")) iconClass = "fa-cloud";
-    else if (cond.includes("rain") || cond.includes("drizzle")) iconClass = "fa-cloud-showers-heavy";
-    else if (cond.includes("snow")) iconClass = "fa-snowflake";
-    else if (cond.includes("storm") || cond.includes("thunder")) iconClass = "fa-bolt";
-    else if (cond.includes("fog") || cond.includes("mist") || cond.includes("haze")) iconClass = "fa-smog";
-    else if (cond.includes("wind")) iconClass = "fa-wind";
+    // Weather icon detection
+    let iconClass = getWeatherIcon(cond, conditionCode);
 
-    // Optional WeatherAPI code override
-    const codeMap = {
-      1000: "fa-sun",
-      1003: "fa-cloud-sun",
-      1006: "fa-cloud",
-      1009: "fa-cloud",
-      1030: "fa-smog",
-      1063: "fa-cloud-showers-heavy",
-      1087: "fa-bolt",
-      1114: "fa-snowflake",
-      1135: "fa-smog",
-      1183: "fa-cloud-showers-heavy",
-      1195: "fa-cloud-showers-heavy",
-      1204: "fa-snowflake",
-      1276: "fa-bolt",
-      1282: "fa-bolt",
-    };
-    if (conditionCode && codeMap[conditionCode]) iconClass = codeMap[conditionCode];
-
-    // Outfit suggestion logic
-    const outfit = getOutfitSuggestion(temp);
+    // Smart outfit suggestion (uses feels like, humidity, wind, conditions)
+    const outfit = getOutfitSuggestion(feelsLike !== "--" ? feelsLike : temp, humidity, windMph, cond);
 
     // Temperature → accent color
-    let color = "var(--accent)";
-    if (temp <= 40) color = "#2674f2ff";
-    else if (temp <= 50) color = "#59a0e3ff";
-    else if (temp <= 60) color = "#3cbeb4ff";
-    else if (temp <= 65) color = "#10B981";
-    else if (temp <= 80) color = "#F59E0B";
-    else color = "#EF4444";
+    const displayTemp = feelsLike !== "--" ? feelsLike : temp;
+    let color = getTempColor(displayTemp);
 
     // Animate weather icon
     if (iconEl) {
@@ -147,45 +134,255 @@ async function loadWeather() {
       outfitEl.textContent = outfit;
       pulseElement(outfitEl, color);
     }
+
+    // Render forecast on back of card
+    renderHourlyForecast(data.hourly || []);
+    renderDailyForecast(data.daily || []);
+
   } catch (err) {
     console.warn("Weather load failed", err);
     safeSetText("tempValue", "--°");
     if (iconEl) iconEl.className = "fas fa-question-circle subtle";
     if (outfitEl) outfitEl.textContent = "Temperature unavailable";
+    if (hourlyContainer) hourlyContainer.innerHTML = '<p class="subtle">Failed to load forecast</p>';
+    if (dailyContainer) dailyContainer.innerHTML = '<p class="subtle">Failed to load forecast</p>';
   }
 }
 
-/** Dynamic Outfit Suggestion System */
-function getOutfitSuggestion(temp) {
-  const outfits = [
-    { min: 100, text: "Stay hydrated, out of the sun, or inside if possible. Bathing suit and hat." },
-    { min: 96, text: "Tank top and athletic shorts, perfect beach or pool weather." },
-    { min: 92, text: "Light tank top and shorts." },
-    { min: 88, text: "T-shirt and shorts." },
-    { min: 84, text: "Short-sleeve shirt and light cottons." },
-    { min: 80, text: "T-shirt and chinos." },
-    { min: 76, text: "Light shirt or tee with comfy jeans." },
-    { min: 72, text: "T-shirt with a thin overshirt." },
-    { min: 68, text: "T-shirt or light long-sleeve with comfy pants." },
-    { min: 64, text: "Long-sleeve top, light sweater." },
-    { min: 60, text: "Sweater or fleece recommended." },
-    { min: 56, text: "Classic sweater weather." },
-    { min: 52, text: "Light coat and long pants." },
-    { min: 48, text: "Medium coat or thick hoodie." },
-    { min: 44, text: "Coat and scarf recommended." },
-    { min: 40, text: "Heavy coat weather." },
-    { min: 36, text: "Winter jacket and gloves." },
-    { min: 32, text: "Puffer jacket, hat, and scarf." },
-    { min: 28, text: "Bundle up, thermal layers needed." },
-    { min: 20, text: "Freezing, thermal layers essential." },
-    { min: 10, text: "Extreme cold, stay indoors if possible." },
-    { min: -10, text: "Subzero danger, full winter gear required." },
-  ];
+function getWeatherIcon(cond, code) {
+  // Code-based mapping first
+  const codeMap = {
+    1000: "fa-sun",
+    1003: "fa-cloud-sun",
+    1006: "fa-cloud",
+    1009: "fa-cloud",
+    1030: "fa-smog",
+    1063: "fa-cloud-rain",
+    1066: "fa-snowflake",
+    1087: "fa-bolt",
+    1114: "fa-snowflake",
+    1135: "fa-smog",
+    1150: "fa-cloud-rain",
+    1183: "fa-cloud-rain",
+    1189: "fa-cloud-showers-heavy",
+    1195: "fa-cloud-showers-heavy",
+    1204: "fa-snowflake",
+    1225: "fa-snowflake",
+    1276: "fa-bolt",
+    1282: "fa-bolt",
+  };
+  
+  if (code && codeMap[code]) return codeMap[code];
 
-  for (const o of outfits) {
-    if (temp >= o.min) return o.text;
+  // Text-based fallback
+  if (cond.includes("clear") || cond.includes("sunny")) return "fa-sun";
+  if (cond.includes("partly")) return "fa-cloud-sun";
+  if (cond.includes("cloud") || cond.includes("overcast")) return "fa-cloud";
+  if (cond.includes("rain") || cond.includes("drizzle")) return "fa-cloud-showers-heavy";
+  if (cond.includes("snow") || cond.includes("sleet") || cond.includes("ice")) return "fa-snowflake";
+  if (cond.includes("storm") || cond.includes("thunder")) return "fa-bolt";
+  if (cond.includes("fog") || cond.includes("mist") || cond.includes("haze")) return "fa-smog";
+  if (cond.includes("wind")) return "fa-wind";
+
+  return "fa-question-circle";
+}
+
+function getTempColor(temp) {
+  if (temp <= 32) return "#60A5FA"; // Freezing - light blue
+  if (temp <= 40) return "#2674f2"; // Cold blue
+  if (temp <= 50) return "#59a0e3"; // Cool blue
+  if (temp <= 60) return "#3cbeb4"; // Teal
+  if (temp <= 70) return "#10B981"; // Green
+  if (temp <= 80) return "#F59E0B"; // Warm orange
+  if (temp <= 90) return "#F97316"; // Hot orange
+  return "#EF4444"; // Very hot red
+}
+
+/** Smart Outfit Suggestion - factors in feels like, humidity, wind, conditions */
+function getOutfitSuggestion(feelsLike, humidity, windMph, conditions) {
+  let suggestion = "";
+  let extras = [];
+
+  // Base suggestion from feels-like temperature
+  if (feelsLike >= 100) {
+    suggestion = "Minimal clothing, stay cool and hydrated.";
+  } else if (feelsLike >= 90) {
+    suggestion = "Tank top and shorts.";
+  } else if (feelsLike >= 80) {
+    suggestion = "T-shirt and light shorts.";
+  } else if (feelsLike >= 70) {
+    suggestion = "T-shirt and comfortable pants.";
+  } else if (feelsLike >= 60) {
+    suggestion = "Light layers or long sleeves.";
+  } else if (feelsLike >= 50) {
+    suggestion = "Sweater or light jacket.";
+  } else if (feelsLike >= 40) {
+    suggestion = "Warm coat recommended.";
+  } else if (feelsLike >= 30) {
+    suggestion = "Heavy coat, hat, and gloves.";
+  } else if (feelsLike >= 20) {
+    suggestion = "Bundle up with thermal layers.";
+  } else {
+    suggestion = "Extreme cold — full winter gear.";
   }
-  return "Bundle up — it's freezing outside!";
+
+  // Humidity modifiers
+  if (humidity >= 80 && feelsLike >= 70) {
+    extras.push("breathable fabrics");
+  } else if (humidity <= 20 && feelsLike < 50) {
+    extras.push("moisturizing lip balm");
+  }
+
+  // Wind modifiers
+  if (windMph >= 20) {
+    extras.push("windbreaker");
+  } else if (windMph >= 15 && feelsLike < 60) {
+    extras.push("wind-resistant layer");
+  }
+
+  // Condition modifiers
+  if (conditions.includes("rain") || conditions.includes("drizzle") || conditions.includes("shower")) {
+    extras.push("umbrella");
+  }
+  if (conditions.includes("snow") || conditions.includes("sleet")) {
+    extras.push("waterproof boots");
+  }
+  if (conditions.includes("sunny") && feelsLike >= 70) {
+    extras.push("sunglasses");
+  }
+
+  // Combine suggestion with extras
+  if (extras.length > 0) {
+    suggestion += ` Bring ${extras.join(", ")}.`;
+  }
+
+  return suggestion;
+}
+
+// Render hourly forecast
+function renderHourlyForecast(hourly) {
+  const container = $("hourlyForecast");
+  if (!container) return;
+
+  if (!hourly || hourly.length === 0) {
+    container.innerHTML = '<p class="subtle">No hourly data available.</p>';
+    return;
+  }
+
+  container.innerHTML = hourly.map((hour, index) => {
+    const icon = getWeatherIcon(hour.condition.toLowerCase(), hour.code);
+    return `
+      <div class="hour-item" style="animation-delay: ${index * 0.05}s">
+        <span class="hour-time">${formatHour(hour.time)}</span>
+        <i class="fas ${icon} hour-icon" aria-hidden="true"></i>
+        <span class="hour-temp">${hour.temp_f}°</span>
+      </div>
+    `;
+  }).join("");
+}
+
+// Render daily forecast
+function renderDailyForecast(daily) {
+  const container = $("dailyForecast");
+  if (!container) return;
+
+  if (!daily || daily.length === 0) {
+    container.innerHTML = '<p class="subtle">No forecast data available.</p>';
+    return;
+  }
+
+  container.innerHTML = daily.map((day, index) => {
+    const icon = getWeatherIcon(day.condition.toLowerCase(), day.code);
+    const dayName = index === 0 ? "Today" : index === 1 ? "Tomorrow" : formatDayName(day.date);
+    // Shorten condition text for display
+    const shortCondition = day.condition.replace("Patchy ", "").replace("Moderate ", "").replace("Heavy ", "");
+    // Rain chance indicator
+    const rainChance = day.chance_of_rain > 30 
+      ? `<span class="rain-chance"><i class="fas fa-droplet"></i> ${day.chance_of_rain}%</span>` 
+      : '';
+    return `
+      <div class="day-item">
+        <span class="day-name">${dayName}</span>
+        <i class="fas ${icon} day-icon" aria-hidden="true"></i>
+        <span class="day-condition">${shortCondition}${rainChance}</span>
+        <span class="day-high">${day.high_f}°</span>
+        <span class="day-low">${day.low_f}°</span>
+      </div>
+    `;
+  }).join("");
+}
+
+// Format hour for display (e.g., "14:00" -> "2 PM")
+function formatHour(timeStr) {
+  if (!timeStr) return "";
+  const [hours, minutes] = timeStr.split(":");
+  const h = parseInt(hours, 10);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const hour12 = h % 12 || 12;
+  return `${hour12}${ampm}`;
+}
+
+// Format date to day name
+function formatDayName(dateStr) {
+  if (!dateStr) return "";
+  const date = new Date(dateStr + "T00:00:00");
+  return date.toLocaleDateString("en-US", { weekday: "short" });
+}
+
+// Flip card handler
+function initWeatherFlipCard() {
+  const card = document.querySelector(".weather-flip-card");
+  const flipBackBtn = $("flipBackBtn");
+  const weatherRefreshBtn = $("weatherRefreshBtn");
+  
+  if (!card) return;
+
+  // Click anywhere on front to flip
+  card.addEventListener("click", (e) => {
+    // Don't flip if clicking buttons
+    if (e.target.closest("#flipBackBtn") || e.target.closest("#weatherRefreshBtn")) return;
+    
+    if (!card.classList.contains("flipped")) {
+      card.classList.add("flipped");
+      card.setAttribute("aria-pressed", "true");
+    }
+  });
+
+  // Keyboard accessibility
+  card.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      card.classList.toggle("flipped");
+      card.setAttribute("aria-pressed", card.classList.contains("flipped"));
+    }
+    if (e.key === "Escape" && card.classList.contains("flipped")) {
+      card.classList.remove("flipped");
+      card.setAttribute("aria-pressed", "false");
+    }
+  });
+
+  // Back button to flip back
+  if (flipBackBtn) {
+    flipBackBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      card.classList.remove("flipped");
+      card.setAttribute("aria-pressed", "false");
+    });
+  }
+
+  // Weather refresh button
+  if (weatherRefreshBtn) {
+    weatherRefreshBtn.addEventListener("click", (e) => {
+      e.stopPropagation(); // Don't flip the card
+      const icon = weatherRefreshBtn.querySelector("i");
+      if (icon) icon.classList.add("spinning");
+      loadWeather().finally(() => {
+        setTimeout(() => {
+          if (icon) icon.classList.remove("spinning");
+        }, 600);
+      });
+    });
+  }
 }
 
 // ------------------ Quotes ------------------
@@ -406,9 +603,10 @@ window.addEventListener("offline", updateSystem);
 
 // ---- Network latency (client-measured) ----
 function classifyLatency(ms) {
-  if (ms <= 60) return "good";
-  if (ms <= 150) return "warning";
-  return "danger";
+  if (ms <= 50) return { class: "good", label: "Excellent" };
+  if (ms <= 100) return { class: "good", label: "Good" };
+  if (ms <= 200) return { class: "warning", label: "Fair" };
+  return { class: "danger", label: "Slow" };
 }
 
 function updateSpeedUI(ms) {
@@ -419,14 +617,15 @@ function updateSpeedUI(ms) {
   if (typeof ms !== "number" || Number.isNaN(ms)) {
     bar.style.width = "0%";
     bar.className = "fill danger";
-    txt.textContent = "— ms";
+    txt.textContent = "—";
     return;
   }
 
   const pct = Math.max(20, Math.min(100, 100 - (ms / 300) * 80));
+  const rating = classifyLatency(ms);
   bar.style.width = `${pct}%`;
-  bar.className = `fill ${classifyLatency(ms)}`;
-  txt.textContent = `${Math.round(ms)} ms`;
+  bar.className = `fill ${rating.class}`;
+  txt.textContent = rating.label;
 }
 
 async function measureLatency() {
@@ -508,18 +707,19 @@ async function loadSystemFromServer() {
     const iface = label ? ` · ${label}` : "";
 
     const latencyVal = Number.isFinite(net.rtt_ms)
-      ? Math.round(net.rtt_ms)
+      ? net.rtt_ms
       : Number.isFinite(net.latency_ms)
-        ? Math.round(net.latency_ms)
+        ? net.latency_ms
         : null;
 
     const down = Number.isFinite(net.downlink_mbps) ? ` · ${net.downlink_mbps.toFixed(1)} Mbps` : "";
     const eff = net.effective_type ? ` · ${net.effective_type}` : "";
-    const lat = latencyVal !== null ? ` · ${latencyVal} ms` : "";
+    const lat = latencyVal !== null ? ` · ${classifyLatency(latencyVal).label}` : "";
 
     document.getElementById("internalNet")?.replaceChildren(
       document.createTextNode(`${online}${iface}${eff}${down}${lat}`),
     );
+
   } catch (e) {
     console.warn("Failed to load /api/system", e);
   }
@@ -534,6 +734,7 @@ function getDeviceIcon(deviceType) {
     "Smart Device": "fa-lightbulb",
     "Gaming Console": "fa-gamepad",
     Printer: "fa-print",
+    "TV/Streaming": "fa-tv",
     Unknown: "fa-question-circle",
   };
   return iconMap[deviceType] || "fa-question-circle";
@@ -548,8 +749,13 @@ async function loadNetworkDevices() {
     const devices = data.devices || [];
 
     if (devices.length === 0) {
-      grid.innerHTML =
-        '<p class="subtle" style="text-align:center;">No devices found in ARP cache. Try accessing other devices on your network first.</p>';
+      grid.innerHTML = `
+        <div class="empty-state">
+          <i class="fas fa-network-wired empty-icon"></i>
+          <p>No devices found in ARP cache</p>
+          <p class="subtle">Try accessing other devices on your network first</p>
+        </div>
+      `;
       return;
     }
 
@@ -590,8 +796,149 @@ async function loadNetworkDevices() {
       .join("");
   } catch (error) {
     console.error("Error loading network devices:", error);
-    grid.innerHTML =
-      '<p class="subtle" style="text-align:center;">Failed to load network devices.</p>';
+    grid.innerHTML = `
+      <div class="empty-state">
+        <i class="fas fa-exclamation-triangle empty-icon"></i>
+        <p>Failed to load network devices</p>
+        <p class="subtle">Please try refreshing the page</p>
+      </div>
+    `;
+  }
+}
+
+// ----------------------
+// Settings Modal (API Key)
+// ----------------------
+function initSettingsModal() {
+  const modal = document.getElementById("settingsModal");
+  const openBtn = document.getElementById("settingsBtn");
+  const closeBtn = document.getElementById("closeSettingsModal");
+  const saveBtn = document.getElementById("saveApiKeyBtn");
+  const input = document.getElementById("apiKeyInput");
+  const toggleVisibility = document.getElementById("toggleApiKeyVisibility");
+  const statusEl = document.getElementById("apiStatus");
+
+  if (!modal || !openBtn) return;
+
+  const close = () => modal.classList.add("hidden");
+
+  // Check API status on open
+  async function checkApiStatus() {
+    statusEl.className = "api-status";
+    statusEl.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Checking...';
+
+    try {
+      const data = await fetchJSON("/api/settings/api_status");
+
+      if (data.configured && data.valid) {
+        statusEl.className = "api-status success";
+        statusEl.innerHTML = '<i class="fas fa-check-circle"></i> API key is configured and working';
+      } else if (data.configured && data.valid === false) {
+        statusEl.className = "api-status error";
+        statusEl.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${data.message}`;
+      } else if (!data.configured) {
+        statusEl.className = "api-status warning";
+        statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> No API key configured';
+      } else {
+        statusEl.className = "api-status";
+        statusEl.innerHTML = `<i class="fas fa-info-circle"></i> ${data.message}`;
+      }
+    } catch (e) {
+      statusEl.className = "api-status error";
+      statusEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> Could not check status';
+    }
+  }
+
+  openBtn.onclick = () => {
+    modal.classList.remove("hidden");
+    input.value = "";
+    checkApiStatus();
+  };
+
+  closeBtn.onclick = close;
+
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) close();
+  });
+
+  // Toggle password visibility
+  if (toggleVisibility) {
+    toggleVisibility.onclick = () => {
+      const isPassword = input.type === "password";
+      input.type = isPassword ? "text" : "password";
+      toggleVisibility.querySelector("i").className = isPassword ? "fas fa-eye-slash" : "fas fa-eye";
+    };
+  }
+
+  // Save API key
+  saveBtn.onclick = async () => {
+    const apiKey = input.value.trim();
+    if (!apiKey) {
+      statusEl.className = "api-status error";
+      statusEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please enter an API key';
+      return;
+    }
+
+    // Show saving state
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Saving...';
+    statusEl.className = "api-status";
+    statusEl.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Validating...';
+
+    try {
+      const response = await fetch("/api/settings/update_api_key", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ api_key: apiKey }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Verify the key works
+        await checkApiStatus();
+        
+        // Clear input on success
+        input.value = "";
+        
+        // Reload weather data
+        setTimeout(() => {
+          loadWeather();
+        }, 500);
+      } else {
+        statusEl.className = "api-status error";
+        statusEl.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${data.error || "Failed to save"}`;
+      }
+    } catch (e) {
+      console.error("API key save failed", e);
+      statusEl.className = "api-status error";
+      statusEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> Failed to save API key';
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = '<i class="fas fa-save"></i> Save API Key';
+    }
+  };
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") saveBtn.click();
+    if (e.key === "Escape") close();
+  });
+}
+
+// Auto-prompt for API key if not configured
+async function checkFirstTimeSetup() {
+  try {
+    const data = await fetchJSON("/api/settings/api_status");
+    
+    if (!data.configured) {
+      // Show a subtle notification on the settings button
+      const settingsBtn = document.getElementById("settingsBtn");
+      if (settingsBtn) {
+        settingsBtn.classList.add("needs-attention");
+      }
+    }
+  } catch (e) {
+    // Silently fail
   }
 }
 
@@ -656,6 +1003,7 @@ function startTimers() {
   timers.push(setInterval(loadSystemFromServer, 60 * 1000));
   timers.push(setInterval(measureLatency, 30 * 1000));
   timers.push(setInterval(loadNetworkDevices, 2 * 60 * 1000));
+  timers.push(setInterval(loadWeather, 10 * 60 * 1000)); // Refresh weather every 10 min
 }
 
 function clearTimers() {
@@ -684,6 +1032,7 @@ document.addEventListener("visibilitychange", () => {
     clearTimers();
   } else {
     updateClock();
+    loadWeather();
     loadPrices();
     updateSystem();
     loadSystemFromServer();
@@ -697,5 +1046,10 @@ document.addEventListener("visibilitychange", () => {
 document.addEventListener("DOMContentLoaded", () => {
   initThemeLogoSwap();
   initLocationModal();
+  initSettingsModal();  // Add this line
+  initWeatherFlipCard();
   init();
+  
+  // Check if first-time setup needed
+  setTimeout(checkFirstTimeSetup, 2000);
 });

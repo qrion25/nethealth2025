@@ -6,8 +6,6 @@ from dotenv import load_dotenv
 import os
 import sys
 
-print(">>> PYTHON EXECUTABLE:", sys.executable)
-
 # Load environment variables
 load_dotenv()
 
@@ -18,6 +16,10 @@ def create_app():
     @app.route("/")
     def index():
         return render_template("index.html")
+
+    @app.route("/clock")
+    def clock():
+        return render_template("clock.html")
 
     return app
 

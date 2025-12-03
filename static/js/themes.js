@@ -46,13 +46,6 @@ function applyFont(key) {
   document.querySelectorAll("[data-font]").forEach(el => {
     el.classList.toggle("is-active", el.dataset.font === key);
   });
-
-  // NEW: Trigger custom event for split-flap integration
-  const fontChangeEvent = new CustomEvent('fontChanged', { 
-    detail: { font: key },
-    bubbles: true 
-  });
-  document.dispatchEvent(fontChangeEvent);
 }
 
 function toggleDark() {
