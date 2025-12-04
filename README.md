@@ -34,9 +34,6 @@ NetHealth 2025 provides real-time system health monitoring, weather forecasts, n
 ```bash
 git clone https://github.com/qrion25/nethealth2025.git
 cd nethealth2025
-<<<<<<< HEAD
-pip install -r requirements.txt or pip3 install -r requirements.txt
-=======
 
 # Create a virtual environment (recommended)
 python3 -m venv venv
@@ -46,7 +43,6 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # Run the app
->>>>>>> f837629 (Update to README v0.3.0)
 python app.py
 ```
 
@@ -55,6 +51,8 @@ Open [http://127.0.0.1:5050](http://127.0.0.1:5050) — that's it!
 **First time?** Click the gear icon in the header to add your free [WeatherAPI](https://www.weatherapi.com/signup.aspx) key. No `.env` file needed.
 
 > **Note:** On macOS/Linux, you may need to use `python3` and `pip3` if `python` and `pip` aren't aliased to Python 3.
+
+---
 
 ---
 
