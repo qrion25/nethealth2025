@@ -121,7 +121,7 @@ def parse_arp_cache_macos() -> List[Dict[str, str]]:
     """Parse arp -a output on macOS."""
     devices = []
     try:
-        result = subprocess.run(['arp', '-a'], capture_output=True, text=True, timeout=5)
+        result = subprocess.run(['arp', '-a'], capture_output=True, text=True, timeout=30)
         pattern = r'\(([0-9.]+)\)\s+at\s+([0-9a-f:]+)\s+on\s+(\S+)'
         for line in result.stdout.splitlines():
             if '(incomplete)' in line.lower():
