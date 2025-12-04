@@ -43,7 +43,7 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # Run the app
-python app.py
+python3 app.py
 ```
 
 Open [http://127.0.0.1:5050](http://127.0.0.1:5050) — that's it!
