@@ -35,7 +35,7 @@ NetHealth 2025 provides real-time system health monitoring, weather forecasts, n
 ```bash
 git clone https://github.com/qrion25/nethealth2025.git
 cd nethealth2025
-pip install -r requirements.txt
+pip install -r requirements.txt or pip3 install -r requirements.txt
 python app.py
 ```
 
